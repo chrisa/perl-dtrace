@@ -7,6 +7,8 @@
 
 MODULE = Devel::DTrace::Provider		PACKAGE = Devel::DTrace::Provider		
 
+PROTOTYPES: DISABLE
+
 BOOT: 
       boot_Devel__DTrace__DOF__Constants();
       boot_Devel__DTrace__DOF__Section();
