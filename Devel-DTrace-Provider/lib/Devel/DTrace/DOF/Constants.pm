@@ -9,6 +9,14 @@ use AutoLoader;
 our @ISA = qw(Exporter);
 
 our %EXPORT_TAGS = ( 'all' => [ qw(
+					  DOF_DOFHDR_SIZE
+					  DOF_SECHDR_SIZE
+					  DOF_PROBE_SIZE
+					  DOF_PRARGS_SIZE
+					  DOF_PROFFS_SIZE
+					  DOF_PRENOFFS_SIZE
+					  DOF_PROVIDER_SIZE
+					  
 					  DOF_ENCODE_LSB
 					  DOF_ENCODE_MSB
 					  DOF_ENCODE_NATIVE
@@ -78,6 +86,14 @@ our %EXPORT_TAGS = ( 'all' => [ qw(
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw(
+			DOF_DOFHDR_SIZE
+			DOF_SECHDR_SIZE
+			DOF_PROBE_SIZE
+			DOF_PRARGS_SIZE
+			DOF_PROFFS_SIZE
+			DOF_PRENOFFS_SIZE
+			DOF_PROVIDER_SIZE
+
 			DOF_ENCODE_LSB
 			DOF_ENCODE_MSB
 			DOF_ENCODE_NATIVE

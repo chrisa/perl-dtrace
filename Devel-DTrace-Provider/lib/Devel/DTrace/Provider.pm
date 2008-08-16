@@ -58,6 +58,34 @@ sub probe {
 	push @{$self->{_probe_defs}}, $pd;
 }
 
+sub dof_size {
+	my ($self) = @_;
+	my $probes = scalar @{$self->{_probe_defs}};
+	my $args = 0;
+	for my $probe (@{$self->{_probe_defs}}) {
+		$args += scalar @{$probe->args};
+	}
+	
+	my $size = 0;
+	for my $sec (
+		     DOF_DOFHDR_SIZE(),
+		     (DOF_SECHDR_SIZE() * 6),
+		     $self->{_strtab}->length,
+		     (DOF_PROBE_SIZE() * $probes),
+		     (DOF_PRARGS_SIZE() * $args),
+		     (DOF_PROFFS_SIZE() * $probes),
+		     (DOF_PRENOFFS_SIZE() * $probes),
+		     DOF_PROVIDER_SIZE()
+		    ) {
+		$size += $sec;
+		my $i = $size % 8;
+		if ($i > 0) {
+			$size += int((8 - $i));
+		}
+	}
+	return $size;
+}
+
 sub enable {
 	my ($self) = @_;
 	$self->{_strtab} = Devel::DTrace::DOF::Section::Strtab->new(0);
@@ -76,7 +104,7 @@ sub enable {
 		my $argc = $pd->argc;
 		
 		my $argv = 0;
-		for my $type ($pd->args) {
+		for my $type (@{$pd->args}) {
 			my $i = $self->{_strtab}->add($type);
 			$argv = $i if $argv == 0;
 		}
@@ -85,7 +113,7 @@ sub enable {
 		push @$probes, 
 		{
 		 name     => $self->{_strtab}->add($pd->name),
-		 func     => $self->{_strtab}->add($pd->name),
+		 func     => $self->{_strtab}->add($pd->function),
 		 noffs    => 1,
 		 enoffidx => $offidx,
 		 argidx   => $argidx,
@@ -101,6 +129,9 @@ sub enable {
 		$stubs->{$pd->name} = $probe;
 		$argidx += $argc;
 		$offidx++;
+
+		use Data::Dumper;
+		print STDERR Dumper { probes => $probes, strtab => $self->{_strtab} };
 	}
 	$s->data($probes);
 	push @{$f->sections}, $s;
@@ -108,14 +139,14 @@ sub enable {
 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PRARGS, 2);
 	my @data;
 	for my $pd (@{$self->{_probe_defs}}) {
-		for my $i (0 .. (scalar $pd->args) - 1) {
+		for my $i (0 .. (scalar @{$pd->args}) - 1) {
 			push @data, $i;
 		}
 	}
 	if (scalar @data == 0) {
 		push @data, 0;
 	}
-	$s->data(\@data);
+	$s->data([@data]);
 	push @{$f->sections}, $s;
 	
 	$f->allocate($self->dof_size);
@@ -128,20 +159,20 @@ sub enable {
 	if (scalar @data == 0) {
 		push @data, 0;
 	}
-	$s->data(\@data);
+	$s->data([@data]);
 	push @{$f->sections}, $s;
 
 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PRENOFFS, 4);
 	@data = ();
 	for my $pd (@{$self->{_probe_defs}}) {
-		push @data, $stubs->{$pd->name}->is_enabled_offset($f->addr, $pd->argc);
+		push @data, $stubs->{$pd->name}->is_enabled_offset($f->addr);
 	}
 	if (scalar @data == 0) {
 		push @data, 0;
 	}
-	$s->data(\@data);
+	$s->data([@data]);
 	push @{$f->sections}, $s;
-	
+
 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 5);
 	my $provider = {
 			strtab => 0,
@@ -176,13 +207,18 @@ sub enable {
 				     class => DTRACE_STABILITY_EVOLVING
 				    },
 		       };
+
+	use Data::Dumper;
+	print STDERR Dumper { provider => $provider };
+
 	$s->data($provider);
 	push @{$f->sections}, $s;
-	
+
 	$f->generate;
-	Devel::DTrace::DOF->loaddof($f, $self->{_module});
+	$f->loaddof($self->{_module});
 	
 	# Eval nonsense here.
+	return $f;
 }
 	
 

@@ -18,7 +18,7 @@ sub argc {
 
 sub args {
 	my ($self) = @_;
-	return @{$self->{_args}};
+	return $self->{_args};
 }
 
 sub name {

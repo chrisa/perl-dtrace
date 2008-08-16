@@ -1,0 +1,3 @@
+Devel::DTrace::DOF::FileData	T_PTROBJ
+Devel::DTrace::Probe		T_PTROBJ
+

@@ -2,7 +2,8 @@ package Devel::DTrace::DOF::Section;
 use strict;
 use warnings;
 
-use Devel::DTrace::DOF::Section::Strtab;
+use Carp qw/ confess /;
+
 use Devel::DTrace::DOF::Constants qw/ :all /;
 
 sub new {
@@ -78,18 +79,6 @@ sub size {
 sub generate {
 	my ($self) = @_;
 
-	if (ref $self->{_data} eq 'ARRAY') {
-		if (scalar @{$self->{_data}} > 0) {
-			$self->{_entsize} = length $self->{_dof} / scalar @{$self->{_data}};
-		}
-		else {
-			$self->{_entsize} = 0;
-		}
-	}
-	else {
-		$self->{_entsize} = 0;
-	}
-
 	my $sections = {
 			&DOF_SECT_COMMENTS => \&dof_generate_comments,
 			&DOF_SECT_STRTAB   => \&dof_generate_strtab,
@@ -98,8 +87,6 @@ sub generate {
 			&DOF_SECT_PROFFS   => \&dof_generate_proffs,
 			&DOF_SECT_PRENOFFS => \&dof_generate_prenoffs,
 			&DOF_SECT_PROVIDER => \&dof_generate_provider,
-			&DOF_SECT_RELTAB   => \&dof_generate_reltab,
-			&DOF_SECT_URELHDR  => \&dof_generate_relhdr,
 			&DOF_SECT_UTSNAME  => \&dof_generate_utsname,
 		       };	
 
@@ -108,6 +95,18 @@ sub generate {
 	}
 	else {
 		return;
+	}
+
+	if (ref $self->{_data} eq 'ARRAY') {
+		if (scalar @{$self->{_data}} > 0) {
+			$self->{_entsize} = length($self->{_dof}) / scalar @{$self->{_data}};
+		}
+		else {
+			$self->{_entsize} = 0;
+		}
+	}
+	else {
+		$self->{_entsize} = 0;
 	}
 
 	return length $self->{_dof};
@@ -124,10 +123,11 @@ sub align {
 			  &DOF_SECT_PROFFS   => 4,
 			  &DOF_SECT_PRENOFFS => 4,
 			  &DOF_SECT_PROVIDER => 4,
-			  &DOF_SECT_RELTAB   => 8,
-			  &DOF_SECT_URELHDR  => 4,
 			  &DOF_SECT_UTSNAME  => 1,
 			 };
+
+	confess "unknown type: $self->{_section_type}"
+	     unless defined $alignments->{$self->{_section_type}};
 
 	return $alignments->{$self->{_section_type}};
 }

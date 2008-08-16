@@ -12,3 +12,6 @@ PROTOTYPES: DISABLE
 BOOT: 
       boot_Devel__DTrace__DOF__Constants();
       boot_Devel__DTrace__DOF__Section();
+      boot_Devel__DTrace__DOF__Header();
+      boot_Devel__DTrace__DOF__FileData();
+      boot_Devel__DTrace__Probe();
