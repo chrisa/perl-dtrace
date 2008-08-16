@@ -1,0 +1,6 @@
+Revision history for Perl extension Devel::DTrace::Provider.
+
+0.01  Wed Aug 13 20:21:04 2008
+	- original version; created by h2xs 1.23 with options
+		-b 5.8.0 -A -n Devel::DTrace::Provider
+
