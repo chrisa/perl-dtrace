@@ -129,9 +129,6 @@ sub enable {
 		$stubs->{$pd->name} = $probe;
 		$argidx += $argc;
 		$offidx++;
-
-		use Data::Dumper;
-		print STDERR Dumper { probes => $probes, strtab => $self->{_strtab} };
 	}
 	$s->data($probes);
 	push @{$f->sections}, $s;
@@ -207,9 +204,6 @@ sub enable {
 				     class => DTRACE_STABILITY_EVOLVING
 				    },
 		       };
-
-	use Data::Dumper;
-	print STDERR Dumper { provider => $provider };
 
 	$s->data($provider);
 	push @{$f->sections}, $s;

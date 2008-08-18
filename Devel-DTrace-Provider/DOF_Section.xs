@@ -42,9 +42,11 @@ header(self)
 	    hdr.dofs_size = SvIV(*val);
 
 	  val = hv_fetch(data, "_entsize", 8, 0);
-	  if (val && *val)
+	  if (val && *val) {
+	    fprintf(stderr, "entsize: %d\n", SvIV(*val));
 	    hdr.dofs_entsize = SvIV(*val);
-	  
+	  }
+
 	  val = hv_fetch(data, "_align", 6, 0);
 	  if (val && *val)
 	    hdr.dofs_align = SvIV(*val);
@@ -129,51 +131,51 @@ dof_generate_probes(self)
 			   
 		memset(&p, 0, sizeof(p));
 		
-		val = hv_fetch(data, "addr", 4, 0);
+		val = hv_fetch(probedata, "addr", 4, 0);
 		if (val && *val)
 		  p.dofpr_addr = (uint64_t)SvIV(*val);
 
-		val = hv_fetch(data, "func", 4, 0);
+		val = hv_fetch(probedata, "func", 4, 0);
 		if (val && *val)
 		  p.dofpr_func = (dof_stridx_t)SvIV(*val);
 
-		val = hv_fetch(data, "name", 4, 0);
+		val = hv_fetch(probedata, "name", 4, 0);
 		if (val && *val)
 		  p.dofpr_name = (dof_stridx_t)SvIV(*val);
 
-		val = hv_fetch(data, "nragv", 5, 0);
+		val = hv_fetch(probedata, "nragv", 5, 0);
 		if (val && *val)
 		  p.dofpr_nargv = (dof_stridx_t)SvIV(*val);
 
-		val = hv_fetch(data, "xargv", 5, 0);
+		val = hv_fetch(probedata, "xargv", 5, 0);
 		if (val && *val)
 		  p.dofpr_xargv = (dof_stridx_t)SvIV(*val);
 
-		val = hv_fetch(data, "argidx", 6, 0);
+		val = hv_fetch(probedata, "argidx", 6, 0);
 		if (val && *val)
 		  p.dofpr_argidx = (uint32_t)SvIV(*val);
 
-		val = hv_fetch(data, "offidx", 6, 0);
+		val = hv_fetch(probedata, "offidx", 6, 0);
 		if (val && *val)
 		  p.dofpr_offidx = (uint32_t)SvIV(*val);
     
-		val = hv_fetch(data, "nargc", 5, 0);
+		val = hv_fetch(probedata, "nargc", 5, 0);
 		if (val && *val)
 		  p.dofpr_nargc = (uint8_t)SvIV(*val);
 
-		val = hv_fetch(data, "xargc", 5, 0);
+		val = hv_fetch(probedata, "xargc", 5, 0);
 		if (val && *val)
 		  p.dofpr_xargc = (uint8_t)SvIV(*val);
 
-		val = hv_fetch(data, "noffs", 5, 0);
+		val = hv_fetch(probedata, "noffs", 5, 0);
 		if (val && *val)
 		  p.dofpr_noffs = (uint16_t)SvIV(*val);
 
-		val = hv_fetch(data, "enoffidx", 8, 0);
+		val = hv_fetch(probedata, "enoffidx", 8, 0);
 		if (val && *val)
 		  p.dofpr_enoffidx = (uint32_t)SvIV(*val);
 
-		val = hv_fetch(data, "nenoffs", 7, 0);
+		val = hv_fetch(probedata, "nenoffs", 7, 0);
 		if (val && *val)
 		  p.dofpr_nenoffs = (uint16_t)SvIV(*val);
 
@@ -309,13 +311,10 @@ dof_generate_provider(self)
 	  if (val && *val && (SvTYPE(SvRV(*val)) == SVt_PVHV)) {
 	    provider = (HV *)SvRV(*val);
 
-	    fprintf(stderr, "got provider\n");
-
 	    memset(&p, 0, sizeof(p));
 	  
 	    val = hv_fetch(provider, "strtab", 6, 0);
 	    if (val && *val) {
-	      fprintf(stderr, "setting strtab\n");
 	      p.dofpv_strtab = (dof_secidx_t)SvIV(*val);
 	    }
 
@@ -339,14 +338,6 @@ dof_generate_provider(self)
 	    if (val && *val)
 	      p.dofpv_prenoffs = (dof_secidx_t)SvIV(*val);
 	    
-	    fprintf(stderr, "%d %d %d %d %d %d",
-		    p.dofpv_strtab,
-		    p.dofpv_probes,
-		    p.dofpv_prargs,
-		    p.dofpv_proffs,
-		    p.dofpv_name,
-		    p.dofpv_prenoffs);
-
 	    val = hv_fetch(provider, "provattr", 8, 0);
 	    if (val && *val && SvTYPE(SvRV(*val)) == SVt_PVHV) {
 	      attrs = (HV *)SvRV(*val);
@@ -448,6 +439,7 @@ dof_generate_strtab(self)
 	    strings = (AV *)SvRV(*val);
 
 	    RETVAL = newSVpvn("", 0);
+	    sv_catpvn(RETVAL, "\0", 1);	    
 	    
 	    for (i = 0; i <= av_len(strings); i++) {
 	      string = av_fetch(strings, i, 0);

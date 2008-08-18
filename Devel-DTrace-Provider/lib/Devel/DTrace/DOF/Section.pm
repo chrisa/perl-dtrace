@@ -97,19 +97,32 @@ sub generate {
 		return;
 	}
 
+	$self->{_entsize} = $self->compute_entsize;
+
+	return length $self->{_dof};
+}
+
+sub compute_entsize {
+	my ($self) = @_;
+
+	my $entsize;
 	if (ref $self->{_data} eq 'ARRAY') {
+		print STDERR "section: $self->{_section_type}\n";
+		use Data::Dumper;
+		print STDERR Dumper { data => $self->{_data} };
+
 		if (scalar @{$self->{_data}} > 0) {
-			$self->{_entsize} = length($self->{_dof}) / scalar @{$self->{_data}};
+			$entsize = length($self->{_dof}) / scalar @{$self->{_data}};
 		}
 		else {
-			$self->{_entsize} = 0;
+			$entsize = 0;
 		}
 	}
 	else {
-		$self->{_entsize} = 0;
+		$entsize = 0;
 	}
 
-	return length $self->{_dof};
+	return $entsize;
 }
 
 sub align {

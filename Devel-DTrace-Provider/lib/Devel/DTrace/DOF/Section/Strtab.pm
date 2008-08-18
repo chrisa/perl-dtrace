@@ -27,4 +27,9 @@ sub length {
 	return $self->{_idx};
 }
 
+sub compute_entsize {
+	my ($self) = @_;
+	return 0;
+}
+
 1;

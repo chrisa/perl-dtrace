@@ -33,6 +33,7 @@ int _loaddof(int fd, dof_helper_t *dh)
 
   val = (user_addr_t)(unsigned long)ioctlData;
   ret = ioctl(fd, DTRACEHIOC_ADDDOF, &val);
+
   fprintf(stderr, "ret: %d\n", ret);
   
   return ret;
@@ -85,7 +86,6 @@ append(self, data)
 	Devel::DTrace::DOF::FileData self
 	SV *data
 	CODE:
-	fprintf(stderr, "offset: %d len: %d\n", self->offset, SvCUR(data));
 	memcpy((self->dof + self->offset), SvPV(data, SvCUR(data)), SvCUR(data));
 	self->offset += SvCUR(data);
 
@@ -122,7 +122,6 @@ loaddof(self, module_name)
       	  dof->dofh_ident[DOF_ID_MAG1] != DOF_MAG_MAG1 ||
       	  dof->dofh_ident[DOF_ID_MAG2] != DOF_MAG_MAG2 ||
       	  dof->dofh_ident[DOF_ID_MAG3] != DOF_MAG_MAG3) {
-	  fprintf(stderr, "bad DOF checksum\n");
 	}
 
   	dh.dofhp_dof  = (uintptr_t)dof;

@@ -25,13 +25,11 @@ sub addr {
 
 sub allocate {
 	my ($self, $size) = @_;
-	print STDERR "allocating $size bytes\n";
 	$self->{_filedata}->allocate($size);
 }
 
 sub append {
 	my ($self, $data) = @_;
-	printf STDERR "appending %d bytes\n", length $data;
 	$self->{_filedata}->append($data);
 }
 
@@ -62,47 +60,36 @@ sub generate {
 		$section->offset($filesz);
 		
 		my $pad = 0;
-		if ($section->align > 1) {
-			my $i = $section->offset % $section->align;
-			print STDERR "i: $i\n";
+		my $align = $section->align;
+		my $offset = $section->offset;
+		if ($align > 1) {
+			my $i = $offset % $align;
 			if ($i > 0) {
-				my $pad = int ($section->align - $i);
-				print STDERR "pad: $pad\n";
-				$section->offset($pad + $section->offset);
+				$pad = $align - $i;
+				$section->offset($pad + $offset);
 				$section->pad("\0" x $pad);
 			}
 		}
 
-		$section->size($length + $pad);
-		
-		$loadsz += $section->size if ($section->flags & 1) == 1;
-		$filesz += $section->size;
+		$section->size($length);
+		$loadsz += ($section->size + $pad) if ($section->flags & 1) == 1;
+		$filesz += ($section->size + $pad);
 	}
-	
+
 	$hdr->loadsz($loadsz);
 	$hdr->filesz($filesz);
 	$hdr->dof_version($dof_version);
-	
-	print STDERR "header\n";
 	$self->append($hdr->generate);
 	
 	for my $section (@{$self->{_sections}}) {
-		print STDERR "section header\n";
 		$self->append($section->header);
 	}
 	
 	for my $section (@{$self->{_sections}}) {
-		print STDERR "padding\n" if $section->pad;
-		$self->append($section->pad) if $section->pad;
-		print STDERR "section DOF: $section->{_index}, offset $section->{_offset}\n";
+		$self->append($section->pad) if defined $section->pad;
 		$self->append($section->dof);
 	}
 
-	printf STDERR "DOF len: %d\n", length $self->{_filedata}->data;
-	
-	#use URI::Escape;
-	#printf STDERR "DOF:\n%s\n", uri_escape($self->{_filedata}->data);
-	
 	open DOF, ">dof$$" or die "can't write to dof$$: $!";
 	print DOF $self->{_filedata}->data;
 	close DOF;

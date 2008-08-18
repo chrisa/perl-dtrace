@@ -201,4 +201,8 @@ my $provider = Devel::DTrace::Provider->new('test0', 'test1module');
 $provider->probe('test');
 ok($provider->enable, 'Generate provider DOF');
 
+#my $cmd = sprintf '/usr/sbin/dtrace -l -n test0%s:::', $$;
+#my @dtrace = `$cmd`;
+#ok(scalar @dtrace == 2, 'probes generated');
 
+sleep 120
