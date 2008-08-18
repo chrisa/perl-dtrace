@@ -42,10 +42,8 @@ header(self)
 	    hdr.dofs_size = SvIV(*val);
 
 	  val = hv_fetch(data, "_entsize", 8, 0);
-	  if (val && *val) {
-	    fprintf(stderr, "entsize: %d\n", SvIV(*val));
+	  if (val && *val)
 	    hdr.dofs_entsize = SvIV(*val);
-	  }
 
 	  val = hv_fetch(data, "_align", 6, 0);
 	  if (val && *val)

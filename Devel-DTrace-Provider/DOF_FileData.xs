@@ -33,8 +33,6 @@ int _loaddof(int fd, dof_helper_t *dh)
 
   val = (user_addr_t)(unsigned long)ioctlData;
   ret = ioctl(fd, DTRACEHIOC_ADDDOF, &val);
-
-  fprintf(stderr, "ret: %d\n", ret);
   
   return ret;
 }
@@ -54,6 +52,8 @@ int _loaddof(int fd, dof_helper_t *dh)
 MODULE = Devel::DTrace::DOF::FileData		PACKAGE = Devel::DTrace::DOF::FileData
 
 PROTOTYPES: ENABLE
+
+VERSIONCHECK: DISABLE  
 
 Devel::DTrace::DOF::FileData
 new(package)
@@ -117,7 +117,7 @@ loaddof(self, module_name)
   	dof_hdr_t *dof;
 	CODE:
 	dof = (dof_hdr_t *)self->dof;
-
+	
 	if (dof->dofh_ident[DOF_ID_MAG0] != DOF_MAG_MAG0 ||
       	  dof->dofh_ident[DOF_ID_MAG1] != DOF_MAG_MAG1 ||
       	  dof->dofh_ident[DOF_ID_MAG2] != DOF_MAG_MAG2 ||
@@ -127,7 +127,6 @@ loaddof(self, module_name)
   	dh.dofhp_dof  = (uintptr_t)dof;
   	dh.dofhp_addr = (uintptr_t)dof;
   	(void) snprintf(dh.dofhp_mod, sizeof (dh.dofhp_mod), module_name);
-
   	fd = open(helper, O_RDWR);
     	gen = _loaddof(fd, &dh);
     	(void) close(fd);

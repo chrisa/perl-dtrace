@@ -88,12 +88,13 @@ sub dof_size {
 
 sub enable {
 	my ($self) = @_;
-	$self->{_strtab} = Devel::DTrace::DOF::Section::Strtab->new(0);
-	my $provider_name_idx = $self->{_strtab}->add($self->{_name});
-	
+
 	my $f = Devel::DTrace::DOF::File->new();
+
+ 	$self->{_strtab} = Devel::DTrace::DOF::Section::Strtab->new(0);
+ 	my $provider_name_idx = $self->{_strtab}->add($self->{_name});
 	push @{$f->sections}, $self->{_strtab};
-	
+
 	my $s = Devel::DTrace::DOF::Section->new(DOF_SECT_PROBES, 1);
 	my $probes = [];
 	my $stubs = {};
@@ -125,14 +126,13 @@ sub enable {
 		 nargv    => $argv,
 		 xargv    => $argv,
 		};
-		
 		$stubs->{$pd->name} = $probe;
 		$argidx += $argc;
 		$offidx++;
 	}
 	$s->data($probes);
 	push @{$f->sections}, $s;
-	
+
 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PRARGS, 2);
 	my @data;
 	for my $pd (@{$self->{_probe_defs}}) {
@@ -145,7 +145,7 @@ sub enable {
 	}
 	$s->data([@data]);
 	push @{$f->sections}, $s;
-	
+
 	$f->allocate($self->dof_size);
 
 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PROFFS, 3);
@@ -170,14 +170,15 @@ sub enable {
 	$s->data([@data]);
 	push @{$f->sections}, $s;
 
-	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 5);
-	my $provider = {
+ 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 5);
+ 	my $provider = {
 			strtab => 0,
 			probes => 1,
 			prargs => 2,
 			proffs => 3,
 			prenoffs => 4,
-			name => $provider_name_idx,
+			name   => $provider_name_idx,
+
 			provattr => { 
 				     name  => DTRACE_STABILITY_EVOLVING,
 				     data  => DTRACE_STABILITY_EVOLVING,
@@ -205,15 +206,13 @@ sub enable {
 				    },
 		       };
 
-	$s->data($provider);
-	push @{$f->sections}, $s;
+ 	$s->data($provider);
+ 	push @{$f->sections}, $s;
 
 	$f->generate;
 	$f->loaddof($self->{_module});
-	
-	# Eval nonsense here.
-	return $f;
+
+	return $stubs;
 }
-	
 
 1;

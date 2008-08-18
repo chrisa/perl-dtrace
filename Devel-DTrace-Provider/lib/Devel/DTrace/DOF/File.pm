@@ -89,10 +89,6 @@ sub generate {
 		$self->append($section->pad) if defined $section->pad;
 		$self->append($section->dof);
 	}
-
-	open DOF, ">dof$$" or die "can't write to dof$$: $!";
-	print DOF $self->{_filedata}->data;
-	close DOF;
 }
 
 1;

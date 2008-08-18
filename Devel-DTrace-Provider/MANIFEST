@@ -4,5 +4,4 @@ MANIFEST
 ppport.h
 Provider.xs
 README
-t/Devel-DTrace-Provider.t
 lib/Devel/DTrace/Provider.pm

@@ -1,26 +1,6 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl Devel-DTrace-Provider.t'
+use Test::More tests => 26;
 
-use Data::Dumper;
-
-#########################
-
-# change 'tests => 1' to 'tests => last_test_to_print';
-
-use Test::More tests => 27;
-BEGIN { use_ok('Devel::DTrace::Provider') };
-
-#########################
-
-# Insert your test code below, the Test::More module is use()ed here so read
-# its man page ( perldoc Test::More ) for help writing this test script.
-
-$SIG{__WARN__} = sub {
-        CORE::dump if $_[0] =~ /uninitialized value in subroutine entry/;
-        CORE::dump if $_[0] =~ /Attempt to free/;
-        warn @_;
-};
-     
+BEGIN { use_ok Devel::DTrace::Provider; }
 use Devel::DTrace::DOF::Constants qw/ :all /;
 
 # Make a UTSNAME section, generate its header, and the section itself
@@ -141,68 +121,3 @@ ok($len, 'Header has some length');
 ok($len == 224, 'Header length correct');
 $dof = $hdr->generate;
 ok($dof, 'Header DOF generated');
-
-# Make a provider
-$f = Devel::DTrace::DOF::File->new();
-$f->allocate(4096);
-
-$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_STRTAB, 0);
-$sec->data (['test', 'main', 'test1']);
-push @{$f->sections}, $sec;
-
-$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PROBES, 1);
-$sec->data([
-	    {
-	     noffs    => 1,
-	     enoffidx => 0,
-	     argidx   => 0,
-	     name     => 1,
-	     nenoffs  => 0,
-	     offidx   => 0,
-	     addr     => 0,
-	     nargc    => 0,
-	     func     => 6,
-	     xargc    => 0
-	    },
-	   ]);
-push @{$f->sections}, $sec;
-
-$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PRARGS, 2);
-$sec->data([ 0 ]);
-push @{$f->sections}, $sec;
-
-$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PROFFS, 3);
-$sec->data([ 36 ]);
-push @{$f->sections}, $sec;
-
-$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PRENOFFS, 4);
-$sec->data([ 0 ]);
-push @{$f->sections}, $sec;
-    
-$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 5);
-$sec->data({
-	    strtab => 0,
-	    probes => 1,
-	    prargs => 2,
-	    proffs => 3,
-	    prenoffs => 4,
-	    name   => 11,
-	    provattr => { name => 5, data => 5, class => 5 },
-	    modattr  => { name => 1, data => 1, class => 5 },
-	    funcattr => { name => 1, data => 1, class => 5 },
-	    nameattr => { name => 5, data => 5, class => 5 },
-	    argsattr => { name => 5, data => 5, class => 5 }
-	   });
-push @{$f->sections}, $sec;
-$f->generate;
-
-# Make a provider with ::Provider
-my $provider = Devel::DTrace::Provider->new('test0', 'test1module');
-$provider->probe('test');
-ok($provider->enable, 'Generate provider DOF');
-
-#my $cmd = sprintf '/usr/sbin/dtrace -l -n test0%s:::', $$;
-#my @dtrace = `$cmd`;
-#ok(scalar @dtrace == 2, 'probes generated');
-
-sleep 120

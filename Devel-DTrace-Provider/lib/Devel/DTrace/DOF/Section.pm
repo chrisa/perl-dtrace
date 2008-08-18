@@ -107,10 +107,6 @@ sub compute_entsize {
 
 	my $entsize;
 	if (ref $self->{_data} eq 'ARRAY') {
-		print STDERR "section: $self->{_section_type}\n";
-		use Data::Dumper;
-		print STDERR Dumper { data => $self->{_data} };
-
 		if (scalar @{$self->{_data}} > 0) {
 			$entsize = length($self->{_dof}) / scalar @{$self->{_data}};
 		}
