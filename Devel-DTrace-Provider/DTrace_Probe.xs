@@ -44,6 +44,8 @@ MODULE = Devel::DTrace::Probe		PACKAGE = Devel::DTrace::Probe
 
 PROTOTYPES: ENABLE
 
+VERSIONCHECK: DISABLE  
+
 Devel::DTrace::Probe
 new(package, argc)
 	char *package

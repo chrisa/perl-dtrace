@@ -11,6 +11,8 @@ MODULE = Devel::DTrace::DOF::Section		PACKAGE = Devel::DTrace::DOF::Section
 
 PROTOTYPES: DISABLE
 
+VERSIONCHECK: DISABLE  
+
 SV *
 header(self)
 	SV *self

@@ -8,6 +8,8 @@
 
 MODULE = Devel::DTrace::DOF::Header		PACKAGE = Devel::DTrace::DOF::Header
 
+VERSIONCHECK: DISABLE  
+
 PROTOTYPES: DISABLE
 
 SV *

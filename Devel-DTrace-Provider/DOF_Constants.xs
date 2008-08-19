@@ -12,6 +12,8 @@ MODULE = Devel::DTrace::DOF::Constants		PACKAGE = Devel::DTrace::DOF::Constants
 
 PROTOTYPES: DISABLE
 
+VERSIONCHECK: DISABLE  
+
 INCLUDE: DOF_Constants_xs.inc
 
 SV *
