@@ -160,15 +160,17 @@ fire(self, ...)
 	void *argv[8]; // probe argc max for now.
   	void (*func)();
 	STRLEN n_a;
+	int argc;
 	CODE:
-	/* munge Ruby values to either char *s or ints. */
-  	for (i = 0; i < items; i++) {
-	  switch (SvTYPE(ST(i))) {
+	argc = items - 1;
+	/* munge Perl values to either char *s or ints. */
+  	for (i = 0; i < argc; i++) {
+	  switch (SvTYPE(ST(i + 1))) { // skip over first argument to XS
 	    case SVt_PV:
-	      argv[i] = (void *)SvPV(ST(i), SvCUR(ST(i)));
+	      argv[i] = (void *)SvPV(ST(i + 1), SvCUR(ST(i + 1)));
 	      break;
 	    case SVt_IV:
-	      argv[i] = (void *)SvIV(ST(i));
+	      argv[i] = (void *)SvIV(ST(i + 1));
 	      break;
     	  }
 	}
