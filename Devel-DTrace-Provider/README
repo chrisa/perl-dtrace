@@ -6,6 +6,17 @@ consumer APIs of DTrace.
 
 *** the port is not yet complete ***
 
+What works:
+
+  * DOF generation and loading
+  * Firing probes directly
+
+To do / to test:
+
+  * Expose probes in their namespace
+  * Probe arguments
+  * Is-enabled checks
+  
 INSTALLATION
 
 To install this module type the following:
