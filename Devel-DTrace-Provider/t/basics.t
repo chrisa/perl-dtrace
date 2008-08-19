@@ -1,4 +1,4 @@
-use Test::More tests => 26;
+use Test::More tests => 27;
 
 BEGIN { use_ok Devel::DTrace::Provider; }
 use Devel::DTrace::DOF::Constants qw/ :all /;
@@ -102,7 +102,14 @@ ok(ref $f eq 'Devel::DTrace::DOF::File', 'file gets blessed correctly');
 undef $f;
 ok(1, 'call destroy survived');
 
-# Use a ::File object
+# Use a ::File object, but blow it up
+$f = Devel::DTrace::DOF::File->new();
+eval {
+	$f->allocate(40964096409640964096);
+};
+ok($@ =~ 'Failed to allocate memory for DOF: Cannot allocate memory', 'memory allocation error caught');
+
+# Use it properly.
 $f = Devel::DTrace::DOF::File->new();
 $f->allocate(4096);
 ok($f->data eq '', 'file is empty to start with');

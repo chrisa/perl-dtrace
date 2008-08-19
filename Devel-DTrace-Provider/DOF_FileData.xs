@@ -80,6 +80,8 @@ allocate(self, size)
 	CODE:
 	self->len = SvIV(size);
 	self->dof = (char *)malloc(sizeof(char) * self->len);
+	if (self->dof == NULL)
+	  Perl_croak(aTHX_ "Failed to allocate memory for DOF: %s", strerror(errno));
 
 void
 append(self, data)
