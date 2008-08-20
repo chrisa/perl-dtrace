@@ -30,32 +30,44 @@ header(self)
 	  val = hv_fetch(data, "_flags", 6, 0);
 	  if (val && *val)
 	    hdr.dofs_flags = SvIV(*val);
+	  else
+	    Perl_croak(aTHX_ "No 'flags' in DOF::Section header");
 
 	  val = hv_fetch(data, "_section_type", 13, 0);
 	  if (val && *val)
 	    hdr.dofs_type = SvIV(*val);
+	  else
+	    Perl_croak(aTHX_ "No 'section_type' in DOF::Section header");
 
 	  val = hv_fetch(data, "_offset", 7, 0);
 	  if (val && *val)
 	    hdr.dofs_offset = SvIV(*val);
+	  else
+	    Perl_croak(aTHX_ "No 'offset' in DOF::Section header");
 	  
 	  val = hv_fetch(data, "_size", 5, 0);
 	  if (val && *val)
 	    hdr.dofs_size = SvIV(*val);
+	  else
+	    Perl_croak(aTHX_ "No 'size' in DOF::Section header");
 
 	  val = hv_fetch(data, "_entsize", 8, 0);
 	  if (val && *val)
 	    hdr.dofs_entsize = SvIV(*val);
+	  else
+	    Perl_croak(aTHX_ "No 'entsize' in DOF::Section header");
 
 	  val = hv_fetch(data, "_align", 6, 0);
 	  if (val && *val)
 	    hdr.dofs_align = SvIV(*val);
+	  else
+	    Perl_croak(aTHX_ "No 'align' in DOF::Section header");
 
 	  RETVAL = newSVpvn((const char *)&hdr, sizeof(hdr));
 	}
-	else {
-	  RETVAL = &PL_sv_undef;
-	}
+	else
+	  Perl_croak(aTHX_ "self is not a hashref in DOF::Section header");
+
 	OUTPUT:
 	RETVAL
 
@@ -89,13 +101,11 @@ dof_generate_comments(self)
 	    RETVAL = newSVsv(*val);
 	    sv_catpvn(RETVAL, "", 1);
 	  }
-	  else {
-		 RETVAL = &PL_sv_undef;
-	  }
+	  else
+	    Perl_croak(aTHX_ "No 'data' in dof_generate_comments");
 	}
-        else {
-	  RETVAL = &PL_sv_undef; 
-	}
+        else
+	    Perl_croak(aTHX_ "self is not a hashref in dof_generate_comments");
 
    	OUTPUT:
         RETVAL
@@ -119,72 +129,107 @@ dof_generate_probes(self)
 	  data = (HV *)SvRV(self);
 	  
 	  val = hv_fetch(data, "_data", 5, 0);
-	  if (val && *val && (SvTYPE(SvRV(*val)) == SVt_PVAV)) {
-	    probes = (AV *)SvRV(*val);
+	  if (val && *val && SvTYPE(SvRV(*val))) {
+	    if (SvTYPE(SvRV(*val)) == SVt_PVAV) {
+	      probes = (AV *)SvRV(*val);
 
-	    RETVAL = newSVpvn("", 0);
+	      RETVAL = newSVpvn("", 0);
 
-	    for (i = 0; i <= av_len(probes); i++) {
-	      probe = av_fetch(probes, i, 0);
-	      if (probe && *probe && SvTYPE(SvRV(*probe)) == SVt_PVHV) {
-		probedata = (HV *)SvRV(*probe);
+	      for (i = 0; i <= av_len(probes); i++) {
+		probe = av_fetch(probes, i, 0);
+		if (probe && *probe && SvTYPE(SvRV(*probe)) == SVt_PVHV) {
+		  probedata = (HV *)SvRV(*probe);
 			   
-		memset(&p, 0, sizeof(p));
+		  memset(&p, 0, sizeof(p));
 		
-		val = hv_fetch(probedata, "addr", 4, 0);
-		if (val && *val)
-		  p.dofpr_addr = (uint64_t)SvIV(*val);
+		  val = hv_fetch(probedata, "addr", 4, 0);
+		  if (val && *val)
+		    p.dofpr_addr = (uint64_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'addr' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "func", 4, 0);
-		if (val && *val)
-		  p.dofpr_func = (dof_stridx_t)SvIV(*val);
+		  val = hv_fetch(probedata, "func", 4, 0);
+		  if (val && *val)
+		    p.dofpr_func = (dof_stridx_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'func' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "name", 4, 0);
-		if (val && *val)
-		  p.dofpr_name = (dof_stridx_t)SvIV(*val);
+		  val = hv_fetch(probedata, "name", 4, 0);
+		  if (val && *val)
+		    p.dofpr_name = (dof_stridx_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'name' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "nragv", 5, 0);
-		if (val && *val)
-		  p.dofpr_nargv = (dof_stridx_t)SvIV(*val);
+		  val = hv_fetch(probedata, "nargv", 5, 0);
+		  if (val && *val)
+		    p.dofpr_nargv = (dof_stridx_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'nargv' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "xargv", 5, 0);
-		if (val && *val)
-		  p.dofpr_xargv = (dof_stridx_t)SvIV(*val);
+		  val = hv_fetch(probedata, "xargv", 5, 0);
+		  if (val && *val)
+		    p.dofpr_xargv = (dof_stridx_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'xargv' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "argidx", 6, 0);
-		if (val && *val)
-		  p.dofpr_argidx = (uint32_t)SvIV(*val);
+		  val = hv_fetch(probedata, "argidx", 6, 0);
+		  if (val && *val)
+		    p.dofpr_argidx = (uint32_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'argidx' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "offidx", 6, 0);
-		if (val && *val)
-		  p.dofpr_offidx = (uint32_t)SvIV(*val);
+		  val = hv_fetch(probedata, "offidx", 6, 0);
+		  if (val && *val)
+		    p.dofpr_offidx = (uint32_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'offidx' in DOF::Section probe");
     
-		val = hv_fetch(probedata, "nargc", 5, 0);
-		if (val && *val)
-		  p.dofpr_nargc = (uint8_t)SvIV(*val);
+		  val = hv_fetch(probedata, "nargc", 5, 0);
+		  if (val && *val)
+		    p.dofpr_nargc = (uint8_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'nargc' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "xargc", 5, 0);
-		if (val && *val)
-		  p.dofpr_xargc = (uint8_t)SvIV(*val);
+		  val = hv_fetch(probedata, "xargc", 5, 0);
+		  if (val && *val)
+		    p.dofpr_xargc = (uint8_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'xargc' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "noffs", 5, 0);
-		if (val && *val)
-		  p.dofpr_noffs = (uint16_t)SvIV(*val);
+		  val = hv_fetch(probedata, "noffs", 5, 0);
+		  if (val && *val)
+		    p.dofpr_noffs = (uint16_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'noffs' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "enoffidx", 8, 0);
-		if (val && *val)
-		  p.dofpr_enoffidx = (uint32_t)SvIV(*val);
+		  val = hv_fetch(probedata, "enoffidx", 8, 0);
+		  if (val && *val)
+		    p.dofpr_enoffidx = (uint32_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'enoffidx' in DOF::Section probe");
 
-		val = hv_fetch(probedata, "nenoffs", 7, 0);
-		if (val && *val)
-		  p.dofpr_nenoffs = (uint16_t)SvIV(*val);
+		  val = hv_fetch(probedata, "nenoffs", 7, 0);
+		  if (val && *val)
+		    p.dofpr_nenoffs = (uint16_t)SvIV(*val);
+		  else
+		    Perl_croak(aTHX_ "No 'nenoffs' in DOF::Section probe");
 
-		probedof = newSVpvn((const char *)&p, sizeof(p));
-		sv_catsv(RETVAL, probedof);
+		  probedof = newSVpvn((const char *)&p, sizeof(p));
+		  sv_catsv(RETVAL, probedof);
+		}
+		else
+		  Perl_croak(aTHX_ "probe data element is not a hashref in dof_generate_probes");
 	      }
 	    }
+	    else 
+	      Perl_croak(aTHX_ "bad data in dof_generate_probes");
 	  }
+	  else
+	    Perl_croak(aTHX_ "No 'data' in dof_generate_probes");
 	}
+        else
+	  Perl_croak(aTHX_ "self is not a hashref in dof_generate_probes");
+
         OUTPUT:
 	RETVAL
 
@@ -205,20 +250,31 @@ dof_generate_prargs(self)
 	  data = (HV *)SvRV(self);
 	  
 	  val = hv_fetch(data, "_data", 5, 0);
-	  if (val && *val && (SvTYPE(SvRV(*val)) == SVt_PVAV)) {
-	    prargs = (AV *)SvRV(*val);
-
-	    RETVAL = newSVpvn("", 0);
-
-	    for (i = 0; i <= av_len(prargs); i++) {
-	      prarg = av_fetch(prargs, i, 0);
-	      if (prarg && SvIOK(*prarg)) {
-	      	arg = (uint8_t)SvIV(*prarg);
-	        sv_catpvn(RETVAL, (char *)&arg, 1);
-              }
-            }
+	  if (val && *val && SvTYPE(SvRV(*val))) {
+	    if (SvTYPE(SvRV(*val)) == SVt_PVAV) {
+	      prargs = (AV *)SvRV(*val);
+	      
+	      RETVAL = newSVpvn("", 0);
+	      
+	      for (i = 0; i <= av_len(prargs); i++) {
+		prarg = av_fetch(prargs, i, 0);
+		if (prarg && SvIOK(*prarg)) {
+		  arg = (uint8_t)SvIV(*prarg);
+		  sv_catpvn(RETVAL, (char *)&arg, 1);
+		}
+		else
+		  Perl_croak(aTHX_ "bad data for prarg");
+	      }
+	    }
+	    else
+	      Perl_croak(aTHX_ "bad data in DOF::Section prargs");
 	  }
+	  else 
+	    Perl_croak(aTHX_ "No 'data' in DOF::Section prargs");
         }
+	else
+	  Perl_croak(aTHX_ "self is not a hashref in DOF::Section prargs");
+
 	OUTPUT:
 	RETVAL
 	
@@ -239,20 +295,31 @@ dof_generate_proffs(self)
 	  data = (HV *)SvRV(self);
 	  
 	  val = hv_fetch(data, "_data", 5, 0);
-	  if (val && *val && (SvTYPE(SvRV(*val)) == SVt_PVAV)) {
-	    proffs = (AV *)SvRV(*val);
-
-	    RETVAL = newSVpvn("", 0);
-
-	    for (i = 0; i <= av_len(proffs); i++) {
-	      proff = av_fetch(proffs, i, 0);
-	      if (proff && SvIOK(*proff)) {
-	      	off = (uint32_t)SvIV(*proff);
-	        sv_catpvn(RETVAL, (char *)&off, 4);
-              }
-            }
+	  if (val && *val && SvTYPE(SvRV(*val))) {
+	    if (SvTYPE(SvRV(*val)) == SVt_PVAV) {
+	      proffs = (AV *)SvRV(*val);
+	      
+	      RETVAL = newSVpvn("", 0);
+	      
+	      for (i = 0; i <= av_len(proffs); i++) {
+		proff = av_fetch(proffs, i, 0);
+		if (proff && SvIOK(*proff)) {
+		  off = (uint32_t)SvIV(*proff);
+		  sv_catpvn(RETVAL, (char *)&off, 4);
+		}
+		else
+		  Perl_croak(aTHX_ "bad data for proff");
+	      }
+	    }
+	    else
+	      Perl_croak(aTHX_ "bad data in DOF::Section proffs");
 	  }
+	  else 
+	    Perl_croak(aTHX_ "No 'data' in DOF::Section proffs");
         }
+	else
+	  Perl_croak(aTHX_ "self is not a hashref in DOF::Section proffs");
+
 	OUTPUT:
 	RETVAL
 
@@ -273,20 +340,31 @@ dof_generate_prenoffs(self)
 	  data = (HV *)SvRV(self);
 	  
 	  val = hv_fetch(data, "_data", 5, 0);
-	  if (val && *val && (SvTYPE(SvRV(*val)) == SVt_PVAV)) {
-	    prenoffs = (AV *)SvRV(*val);
-
-	    RETVAL = newSVpvn("", 0);
-
-	    for (i = 0; i <= av_len(prenoffs); i++) {
-	      prenoff = av_fetch(prenoffs, i, 0);
-	      if (prenoff && SvIOK(*prenoff)) {
-	      	enoff = (uint32_t)SvIV(*prenoff);
-	        sv_catpvn(RETVAL, (char *)&enoff, 4);
-              }
-            }
+	  if (val && *val && SvTYPE(SvRV(*val))) {
+	    if (SvTYPE(SvRV(*val)) == SVt_PVAV) {
+	      prenoffs = (AV *)SvRV(*val);
+	      
+	      RETVAL = newSVpvn("", 0);
+	      
+	      for (i = 0; i <= av_len(prenoffs); i++) {
+		prenoff = av_fetch(prenoffs, i, 0);
+		if (prenoff && SvIOK(*prenoff)) {
+		  enoff = (uint32_t)SvIV(*prenoff);
+		  sv_catpvn(RETVAL, (char *)&enoff, 4);
+		}
+		else
+		  Perl_croak(aTHX_ "bad data for prenoff");
+	      }
+	    }
+	    else
+	      Perl_croak(aTHX_ "bad data in DOF::Section prenoffs");
 	  }
+	  else 
+	    Perl_croak(aTHX_ "No 'data' in DOF::Section prenoffs");
         }
+	else
+	  Perl_croak(aTHX_ "self is not a hashref in DOF::Section prenoffs");
+
 	OUTPUT:
 	RETVAL
 	

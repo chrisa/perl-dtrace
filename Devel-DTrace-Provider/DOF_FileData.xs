@@ -60,6 +60,8 @@ new(package)
         char *package
 	CODE:
 	RETVAL = (dof_file_t *)malloc(sizeof(dof_file_t));
+	if (RETVAL == NULL)
+	  Perl_croak(aTHX_ "Failed to allocate memory for FileData: %s", strerror(errno));
 	RETVAL->dof = NULL;
 	RETVAL->len = 0;
 	RETVAL->offset = 0;

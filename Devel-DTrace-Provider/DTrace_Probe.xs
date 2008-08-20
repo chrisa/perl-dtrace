@@ -123,6 +123,9 @@ new(package, argc)
 
   /* allocate memory on a page boundary, for mprotect */
   RETVAL->func = (void *)valloc(FUNC_SIZE);
+  if (RETVAL->func == NULL)
+    Perl_croak(aTHX_ "Failed to allocate memory for probe: %s", strerror(errno));
+
   (void)mprotect((void *)RETVAL->func, FUNC_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
   memcpy(RETVAL->func, insns, FUNC_SIZE);
 
