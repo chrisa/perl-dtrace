@@ -7,6 +7,47 @@
 #include <sys/dtrace.h>
 #include <sys/utsname.h>
 
+static uint8_t
+fetch_attr_val(HV *hash, const char *name)
+{
+  SV **val;
+  uint8_t attr_val;
+  
+  val = hv_fetch(hash, name, strlen(name), 0);
+  if (val && *val && SvIOK(*val))
+    attr_val = SvIV(*val);  
+  else
+    Perl_croak(aTHX_ "bad data for %s in fetch_attr_val", name);
+  
+  return attr_val;
+}
+
+static uint32_t
+fetch_attrs(HV *hash, const char *name)
+{
+  SV **val;
+  HV *attrs;
+  uint32_t attr;
+  uint8_t n, d, c;
+
+  val = hv_fetch(hash, name, strlen(name), 0);
+  if (val && *val && SvTYPE(SvRV(*val))) {
+    if (SvTYPE(SvRV(*val)) == SVt_PVHV) {
+      attrs = (HV *)SvRV(*val);
+      n = fetch_attr_val(attrs, "name");
+      d = fetch_attr_val(attrs, "data");
+      c = fetch_attr_val(attrs, "class");
+      attr = DOF_ATTR(n, d, c);
+    }
+    else
+      Perl_croak(aTHX_ "bad data for %s in fetch_attrs", name);
+  }
+  else
+    Perl_croak(aTHX_ "No '%s' in fetch_attrs", name);
+
+  return attr;
+}
+
 MODULE = Devel::DTrace::DOF::Section		PACKAGE = Devel::DTrace::DOF::Section
 
 PROTOTYPES: DISABLE
@@ -386,114 +427,65 @@ dof_generate_provider(self)
 	  data = (HV *)SvRV(self);
 	  val = hv_fetch(data, "_data", 5, 0);
 
-	  if (val && *val && (SvTYPE(SvRV(*val)) == SVt_PVHV)) {
-	    provider = (HV *)SvRV(*val);
-
-	    memset(&p, 0, sizeof(p));
-	  
-	    val = hv_fetch(provider, "strtab", 6, 0);
-	    if (val && *val) {
-	      p.dofpv_strtab = (dof_secidx_t)SvIV(*val);
-	    }
-
-	    val = hv_fetch(provider, "probes", 6, 0);
-	    if (val && *val)
-	      p.dofpv_probes = (dof_secidx_t)SvIV(*val);
-	  
-	    val = hv_fetch(provider, "prargs", 6, 0);
-	    if (val && *val)
-	      p.dofpv_prargs = (dof_secidx_t)SvIV(*val);
-	  
-	    val = hv_fetch(provider, "proffs", 6, 0);
-	    if (val && *val)
-	      p.dofpv_proffs = (dof_secidx_t)SvIV(*val);
-	  
-	    val = hv_fetch(provider, "name", 4, 0);
-	    if (val && *val)
+	  if (val && *val && SvTYPE(SvRV(*val))) {
+	    if (SvTYPE(SvRV(*val)) == SVt_PVHV) {
+	      provider = (HV *)SvRV(*val);
+	      
+	      memset(&p, 0, sizeof(p));
+	      
+	      val = hv_fetch(provider, "strtab", 6, 0);
+	      if (val && *val)
+		p.dofpv_strtab = (dof_secidx_t)SvIV(*val);
+	      else
+		Perl_croak(aTHX_ "No 'strtab' in DOF::Section provider");
+	      
+	      val = hv_fetch(provider, "probes", 6, 0);
+	      if (val && *val)
+		p.dofpv_probes = (dof_secidx_t)SvIV(*val);
+	      else
+		Perl_croak(aTHX_ "No 'probes' in DOF::Section provider");
+	      
+	      val = hv_fetch(provider, "prargs", 6, 0);
+	      if (val && *val)
+		p.dofpv_prargs = (dof_secidx_t)SvIV(*val);
+	      else
+		Perl_croak(aTHX_ "No 'prargs' in DOF::Section provider");
+	      
+	      val = hv_fetch(provider, "proffs", 6, 0);
+	      if (val && *val)
+		p.dofpv_proffs = (dof_secidx_t)SvIV(*val);
+	      else
+		Perl_croak(aTHX_ "No 'proffs' in DOF::Section provider");
+	      
+	      val = hv_fetch(provider, "name", 4, 0);
+	      if (val && *val)
 	      p.dofpv_name = (dof_stridx_t)SvIV(*val);
-	  
-	    val = hv_fetch(provider, "prenoffs", 8, 0);
-	    if (val && *val)
-	      p.dofpv_prenoffs = (dof_secidx_t)SvIV(*val);
-	    
-	    val = hv_fetch(provider, "provattr", 8, 0);
-	    if (val && *val && SvTYPE(SvRV(*val)) == SVt_PVHV) {
-	      attrs = (HV *)SvRV(*val);
-	      val = hv_fetch(attrs, "name", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		n = SvIV(*val);
-	      val = hv_fetch(attrs, "data", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		d = SvIV(*val);
-	      val = hv_fetch(attrs, "class", 5, 0);
-	      if (val && *val && SvIOK(*val))
-		c = SvIV(*val);
-	      p.dofpv_provattr = DOF_ATTR(n, d, c);
+	      else
+		Perl_croak(aTHX_ "No 'name' in DOF::Section provider");
+	      
+	      val = hv_fetch(provider, "prenoffs", 8, 0);
+	      if (val && *val)
+		p.dofpv_prenoffs = (dof_secidx_t)SvIV(*val);
+	      else
+		Perl_croak(aTHX_ "No 'prenoffs' in DOF::Section provider");
+	      
+	      p.dofpv_provattr = fetch_attrs(provider, "provattr");
+	      p.dofpv_modattr  = fetch_attrs(provider, "modattr");
+	      p.dofpv_funcattr = fetch_attrs(provider, "funcattr");
+	      p.dofpv_nameattr = fetch_attrs(provider, "nameattr");
+	      p.dofpv_argsattr = fetch_attrs(provider, "argsattr");
+	      
+	      RETVAL = newSVpvn((const char *)&p, sizeof(p));
 	    }
-
-	    val = hv_fetch(provider, "modattr", 7, 0);
-	    if (val && *val && SvTYPE(SvRV(*val)) == SVt_PVHV) {
-	      attrs = (HV *)SvRV(*val);
-	      val = hv_fetch(attrs, "name", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		n = SvIV(*val);
-	      val = hv_fetch(attrs, "data", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		d = SvIV(*val);
-	      val = hv_fetch(attrs, "class", 5, 0);
-	      if (val && *val && SvIOK(*val))
-		c = SvIV(*val);
-	      p.dofpv_modattr = DOF_ATTR(n, d, c);
-	    }
-
-	    val = hv_fetch(provider, "funcattr", 8, 0);
-	    if (val && *val && SvTYPE(SvRV(*val)) == SVt_PVHV) {
-	      attrs = (HV *)SvRV(*val);
-	      val = hv_fetch(attrs, "name", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		n = SvIV(*val);
-	      val = hv_fetch(attrs, "data", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		d = SvIV(*val);
-	      val = hv_fetch(attrs, "class", 5, 0);
-	      if (val && *val && SvIOK(*val))
-		c = SvIV(*val);
-	      p.dofpv_funcattr = DOF_ATTR(n, d, c);
-	    }
-
-	    val = hv_fetch(provider, "nameattr", 8, 0);
-	    if (val && *val && SvTYPE(SvRV(*val)) == SVt_PVHV) {
-	      attrs = (HV *)SvRV(*val);
-	      val = hv_fetch(attrs, "name", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		n = SvIV(*val);
-	      val = hv_fetch(attrs, "data", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		d = SvIV(*val);
-	      val = hv_fetch(attrs, "class", 5, 0);
-	      if (val && *val && SvIOK(*val))
-		c = SvIV(*val);
-	      p.dofpv_nameattr = DOF_ATTR(n, d, c);
-	    }
-
-	    val = hv_fetch(provider, "argsattr", 8, 0);
-	    if (val && *val && SvTYPE(SvRV(*val)) == SVt_PVHV) {
-	      attrs = (HV *)SvRV(*val);
-	      val = hv_fetch(attrs, "name", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		n = SvIV(*val);
-	      val = hv_fetch(attrs, "data", 4, 0);
-	      if (val && *val && SvIOK(*val))
-		d = SvIV(*val);
-	      val = hv_fetch(attrs, "class", 5, 0);
-	      if (val && *val && SvIOK(*val))
-		c = SvIV(*val);
-	      p.dofpv_argsattr = DOF_ATTR(n, d, c);
-	    }
-
-	    RETVAL = newSVpvn((const char *)&p, sizeof(p));
+	    else
+	      Perl_croak(aTHX_ "bad data in DOF::Section provider");
 	  }
+	  else 
+	    Perl_croak(aTHX_ "No 'data' in DOF::Section provider");
 	}
+	else
+	  Perl_croak(aTHX_ "self is not a hashref in DOF::Section provider");
+
         OUTPUT:
 	RETVAL
 
@@ -513,24 +505,32 @@ dof_generate_strtab(self)
 	  data = (HV *)SvRV(self);
 	  
 	  val = hv_fetch(data, "_data", 5, 0);
-	  if (val && *val && (SvTYPE(SvRV(*val)) == SVt_PVAV)) {
-	    strings = (AV *)SvRV(*val);
-
-	    RETVAL = newSVpvn("", 0);
-	    sv_catpvn(RETVAL, "\0", 1);	    
-	    
-	    for (i = 0; i <= av_len(strings); i++) {
-	      string = av_fetch(strings, i, 0);
-	      if (string && SvPOK(*string)) {
-		sv_catsv(RETVAL, *string);
-		sv_catpvn(RETVAL, "", 1);
+	  if (val && *val && SvTYPE(SvRV(*val))) {
+	    if (SvTYPE(SvRV(*val)) == SVt_PVAV) {
+	      strings = (AV *)SvRV(*val);
+	      
+	      RETVAL = newSVpvn("", 0);
+	      sv_catpvn(RETVAL, "\0", 1);	    
+	      
+	      for (i = 0; i <= av_len(strings); i++) {
+		string = av_fetch(strings, i, 0);
+		if (string && SvPOK(*string)) {
+		  sv_catsv(RETVAL, *string);
+		  sv_catpvn(RETVAL, "", 1);
+		}
+		else 
+		  Perl_croak(aTHX_ "bad string in strtab");
 	      }
 	    }
+	    else
+	      Perl_croak(aTHX_ "bad data in DOF::Section strtab");		
 	  }
+	  else
+	    Perl_croak(aTHX_ "No 'data' in DOF::Section strtab");	    
 	}
-	else {
-	  RETVAL = &PL_sv_undef;
-	}
+	else
+	  Perl_croak(aTHX_ "self is not a hashref in DOF::Section strtab");
+
         OUTPUT:
         RETVAL
 	  

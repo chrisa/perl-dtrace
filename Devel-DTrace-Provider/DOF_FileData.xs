@@ -117,7 +117,6 @@ loaddof(self, module_name)
   	dof_helper_t dh;
   	int fd;
   	int gen;
-  	dof_file_t *file;
   	dof_hdr_t *dof;
 	CODE:
 	dof = (dof_hdr_t *)self->dof;

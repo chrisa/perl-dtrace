@@ -1,4 +1,4 @@
-use Test::More tests => 61;
+use Test::More tests => 89;
 
 BEGIN { use_ok Devel::DTrace::Provider; }
 use Devel::DTrace::DOF::Constants qw/ :all /;
@@ -194,6 +194,64 @@ $sec->data({
 $len = $sec->generate;
 ok($len, 'DOF provider section generated');
 ok($len == 44, 'DOF provider section length');
+
+# bad provider sections
+$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 0);
+delete $sec->{_data};
+eval { $sec->generate };
+ok($@ =~ /No 'data'/, 'missing data noted in provider section');
+
+$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 0);
+$sec->data([]);
+eval { $sec->generate };
+ok($@ =~ /bad data/, 'bad data noted in provider section');
+
+for my $missing (qw/ strtab probes prargs proffs prenoffs name
+		     provattr modattr funcattr nameattr argsattr /) {
+	
+	$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 0);
+	my $data = {
+		    strtab => 1,
+		    probes => 2,
+		    prargs => 3,
+		    proffs => 4,
+		    prenoffs => 5,
+		    name => 1,
+		    provattr => { name => 1, data => 1, class => 1 },
+		    modattr  => { name => 1, data => 1, class => 1 },
+		    funcattr => { name => 1, data => 1, class => 1 },
+		    nameattr => { name => 1, data => 1, class => 1 },
+		    argsattr => { name => 1, data => 1, class => 1 }
+		   };
+	delete $data->{$missing};
+	$sec->data($data);
+	eval { $sec->generate };
+	ok($@ =~ /No '$missing'/, "missing $missing noted in provider section");
+}
+
+for my $attr (qw/ provattr modattr funcattr nameattr argsattr /) {
+	for my $missing (qw/ name data class /) {
+		
+		$sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 0);
+		my $data = {
+			    strtab => 1,
+			    probes => 2,
+			    prargs => 3,
+			    proffs => 4,
+			    prenoffs => 5,
+			    name => 1,
+			    provattr => { name => 1, data => 1, class => 1 },
+			    modattr  => { name => 1, data => 1, class => 1 },
+			    funcattr => { name => 1, data => 1, class => 1 },
+			    nameattr => { name => 1, data => 1, class => 1 },
+			    argsattr => { name => 1, data => 1, class => 1 }
+			   };
+		delete $data->{$attr}->{$missing};
+		$sec->data($data);
+		eval { $sec->generate };
+		ok($@ =~ /bad data for $missing/, "missing $missing noted in $attr");
+	}
+}
 
 # Bad section headers
 $sec = Devel::DTrace::DOF::Section->new(DOF_SECT_PROVIDER, 0);
