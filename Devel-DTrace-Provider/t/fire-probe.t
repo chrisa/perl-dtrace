@@ -3,6 +3,10 @@
 
 use Data::Dumper;
 
+use FindBin qw/ $Bin /;
+use lib $Bin;
+require 'dtrace_lib.pl';
+
 #########################
 
 # change 'tests => 1' to 'tests => last_test_to_print';
@@ -29,7 +33,8 @@ ok($provider, 'created provider');
 $provider->probe('test');
 my $stubs = $provider->enable;
 ok($stubs, 'got stubs');
-
-for my $i (1..5) {
+dtrace_start(sprintf('prov%d:::{ trace("fired") }', $$), 1);
+for my $i (1..50) {
 	$stubs->{test}->fire();
 }
+dtrace_stop();

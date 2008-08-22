@@ -4,18 +4,19 @@ Devel-DTrace-Provider version 0.01
 This is a Perl port of "ruby-dtrace", bindings for the probe and 
 consumer APIs of DTrace. 
 
-*** the port is not yet complete ***
-
 What works:
 
   * DOF generation and loading
-  * Firing probes directly
+  * Firing probes directly, with arguments
+  * Probes exposed as subs in their own namespace
 
 To do / to test:
 
-  * Expose probes in their namespace
-  * Probe arguments
   * Is-enabled checks
+
+This is enough to be useful, though doesn't minimise the disabled
+probe effect, and provides no way run code to gather probe arguments
+only when the probe is enabled.
   
 INSTALLATION
 

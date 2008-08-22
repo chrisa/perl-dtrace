@@ -212,7 +212,18 @@ sub enable {
 	$f->generate;
 	$f->loaddof($self->{_module});
 
+	for my $stub (keys %$stubs) {
+		eval "*Devel::DTrace::Probe::$self->{_name}::$stub = _gen_stub(\$stubs->{\$stub})";
+	}
+
 	return $stubs;
+}
+
+sub _gen_stub {
+	my ($stub) = @_;
+	return sub {
+		$stub->fire(@_);
+	};
 }
 
 1;
