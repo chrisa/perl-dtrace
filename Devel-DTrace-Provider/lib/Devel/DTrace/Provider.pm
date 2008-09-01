@@ -3,6 +3,7 @@ package Devel::DTrace::Provider;
 use 5.008;
 use strict;
 use warnings;
+use Sub::Install;
 
 =head1 NAME
 
@@ -211,9 +212,13 @@ sub enable {
 
 	$f->generate;
 	$f->loaddof($self->{_module});
-
+	
 	for my $stub (keys %$stubs) {
-		eval "*Devel::DTrace::Probe::$self->{_name}::$stub = _gen_stub(\$stubs->{\$stub})";
+		Sub::Install::install_sub({
+					   code => _gen_stub($stubs->{$stub}),
+					   into => "Devel::DTrace::Probe::$self->{_name}",
+					   as   => $stub,
+					  });
 	}
 
 	return $stubs;
@@ -221,9 +226,7 @@ sub enable {
 
 sub _gen_stub {
 	my ($stub) = @_;
-	return sub {
-		$stub->fire(@_);
-	};
+ 	return sub (&) { shift->($stub) if $stub->is_enabled };
 }
 
 1;
