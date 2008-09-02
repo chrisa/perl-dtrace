@@ -4,7 +4,7 @@ use lib $Bin;
 
 BEGIN { use_ok Test::Provider1; use_ok Test::Provider2 };
 
-probe1 { shift->fire('foo') };
+probe1 { shift->fire };
 probe2 { shift->fire };
 
 probe3 { shift->fire };
