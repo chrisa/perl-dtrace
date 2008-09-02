@@ -1,0 +1,14 @@
+package Test::Provider1;
+use strict;
+use warnings;
+
+use  Devel::DTrace::Provider::Base ;
+use base qw/ Devel::DTrace::Provider::Base /;
+
+provider 'provider1' => as {
+	my $p = shift;
+	$p->probe('probe1');
+	$p->probe('probe2');
+};
+
+1;
