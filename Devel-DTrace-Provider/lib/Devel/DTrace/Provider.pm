@@ -35,6 +35,16 @@ sub new {
 	return $self;
 }
 
+sub name {
+	my ($self) = @_;
+	return $self->{_name};
+}
+
+sub probe_names {
+	my ($self) = @_;
+	return keys %{$self->{_probes}};
+}
+
 sub probe {
 	my ($self, $name, @types) = @_;
 	my $options = {};
@@ -98,9 +108,10 @@ sub enable {
 
 	my $s = Devel::DTrace::DOF::Section->new(DOF_SECT_PROBES, 1);
 	my $probes = [];
-	my $stubs = {};
 	my $argidx = 0;
 	my $offidx = 0;
+
+	$self->{_probes} = {};
 	
 	for my $pd (@{$self->{_probe_defs}}) {
 		my $argc = $pd->argc;
@@ -127,7 +138,7 @@ sub enable {
 		 nargv    => $argv,
 		 xargv    => $argv,
 		};
-		$stubs->{$pd->name} = $probe;
+		$self->{_probes}->{$pd->name} = $probe;
 		$argidx += $argc;
 		$offidx++;
 	}
@@ -152,7 +163,7 @@ sub enable {
 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PROFFS, 3);
 	@data = ();
 	for my $pd (@{$self->{_probe_defs}}) {
-		push @data, $stubs->{$pd->name}->probe_offset($f->addr, $pd->argc);
+		push @data, $self->{_probes}->{$pd->name}->probe_offset($f->addr, $pd->argc);
 	}
 	if (scalar @data == 0) {
 		push @data, 0;
@@ -163,7 +174,7 @@ sub enable {
 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PRENOFFS, 4);
 	@data = ();
 	for my $pd (@{$self->{_probe_defs}}) {
-		push @data, $stubs->{$pd->name}->is_enabled_offset($f->addr);
+		push @data, $self->{_probes}->{$pd->name}->is_enabled_offset($f->addr);
 	}
 	if (scalar @data == 0) {
 		push @data, 0;
@@ -213,15 +224,20 @@ sub enable {
 	$f->generate;
 	$f->loaddof($self->{_module});
 	
-	for my $stub (keys %$stubs) {
-		Sub::Install::install_sub({
-					   code => _gen_stub($stubs->{$stub}),
-					   into => "Devel::DTrace::Probe::$self->{_name}",
-					   as   => $stub,
-					  });
-	}
+# 	for my $stub (keys %$self->{_probes}) {
+# 		Sub::Install::install_sub({
+# 					   code => _gen_stub($self->{_probes}->{$stub}),
+# 					   into => "Devel::DTrace::Probe::$self->{_name}",
+# 					   as   => $stub,
+# 					  });
+# 	}
 
-	return $stubs;
+	return $self->{_probes};
+}
+
+sub probe_function { 
+	my ($self, $probe_name) = @_;
+	return _gen_stub($self->{_probes}->{$probe_name});
 }
 
 sub _gen_stub {
