@@ -7,7 +7,7 @@
 #include <sys/dtrace.h>
 
 static uint8_t
-dof_version()
+dof_version(uint8_t header_version)
 {
   uint8_t dof_version;
   /* DOF versioning: Apple always needs version 3, but Solaris can use
@@ -15,7 +15,7 @@ dof_version()
 #ifdef __APPLE__
   dof_version = DOF_VERSION_3;
 #else
-  switch(FIX2INT(rb_iv_get(self, "@dof_version"))) {
+  switch(header_version) {
   case 1:
     dof_version = DOF_VERSION_1;
     break;
@@ -59,10 +59,15 @@ generate(self)
 	  
 	  hdr.dofh_ident[DOF_ID_MODEL]    = DOF_MODEL_NATIVE;
 	  hdr.dofh_ident[DOF_ID_ENCODING] = DOF_ENCODE_NATIVE;
-	  hdr.dofh_ident[DOF_ID_VERSION]  = dof_version();
 	  hdr.dofh_ident[DOF_ID_DIFVERS]  = DIF_VERSION;
 	  hdr.dofh_ident[DOF_ID_DIFIREG]  = DIF_DIR_NREGS;
 	  hdr.dofh_ident[DOF_ID_DIFTREG]  = DIF_DTR_NREGS;
+
+	  val = hv_fetch(data, "_dof_version", 12, 0);
+	  if (val && *val && SvIOK(*val))
+	    hdr.dofh_ident[DOF_ID_VERSION] = dof_version((uint8_t)SvIV(*val));
+	  else
+	    hdr.dofh_ident[DOF_ID_VERSION] = dof_version(2); /* default 2, will be 3 on OSX */
 	  
 	  hdr.dofh_hdrsize = sizeof(dof_hdr_t);
 	  hdr.dofh_secsize = sizeof(dof_sec_t);

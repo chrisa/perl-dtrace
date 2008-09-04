@@ -12,7 +12,7 @@ ok(length $hdr == 32, 'DOF header length');
 
 my $len = $sec->generate;
 ok($len, 'DOF utsname section generated');
-ok($len == 1280, 'DOF utsname section length');
+ok($len >= 1280, 'DOF utsname section length'); # at least that long, to catch both platforms
 
 # Make a comments section, check its DOF length
 $sec = Devel::DTrace::DOF::Section->new(DOF_SECT_COMMENTS, 0);
@@ -274,7 +274,7 @@ $f = Devel::DTrace::DOF::File->new();
 eval {
 	$f->allocate(40964096409640964096);
 };
-ok($@ =~ 'Failed to allocate memory for DOF: Cannot allocate memory', 'memory allocation error caught');
+ok($@ =~ /Failed to allocate memory for DOF/, 'memory allocation error caught');
 
 # Use it properly.
 $f = Devel::DTrace::DOF::File->new();

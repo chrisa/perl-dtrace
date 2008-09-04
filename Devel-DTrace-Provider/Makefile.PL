@@ -1,5 +1,21 @@
 use 5.008;
 use ExtUtils::MakeMaker;
+
+# TODO: catch early versions of these, handle failure by not building
+# the XS part.
+my $platform = $^O;
+if ($platform eq 'darwin') {
+	print STDERR "Building for OS X\n";
+	symlink 'DTrace_Probe.xs-darwin', 'DTrace_Probe.xs';
+}
+elsif ($platform eq 'solaris') {
+	print STDERR "Building for Solaris\n";
+	symlink 'DTrace_Probe.xs-solaris', 'DTrace_Probe.xs';
+}
+else {
+	die "Platforms supported: solaris darwin";
+}
+
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(

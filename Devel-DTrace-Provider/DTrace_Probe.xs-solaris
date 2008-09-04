@@ -1,0 +1,219 @@
+#include "EXTERN.h"
+#include "perl.h"
+#include "XSUB.h"
+
+#include "ppport.h"
+
+/* Struct wrapping a probe, a handcrafted function created to be a
+   probe trigger point, and its corresponding is_enabled tracepoint.
+
+   This is actually a pointer to the is_enabled function (the probe
+   function is after) so it's declared to take no args, and return
+   int. */
+typedef struct dtrace_probe {
+  int (*func)();
+} dtrace_probe_t;
+
+
+#define FUNC_SIZE 96 /* 32 bytes of is_enabled, plus then good for 16
+			 arguments: 16 + 3 * argc */
+#define IS_ENABLED_FUNC_LEN 32
+
+#define OP_PUSHL_EBP     0x55
+#define OP_MOVL_ESP_EBP  0x89, 0xe5
+#define OP_SUBL_N_ESP    0x83, 0xec
+#define OP_PUSHL_N_EBP_U 0xff
+#define OP_PUSHL_N_EBP_L 0x75
+#define OP_NOP           0x90
+#define OP_ADDL_ESP_U    0x83
+#define OP_ADDL_ESP_L    0xc4
+#define OP_LEAVE         0xc9
+#define OP_RET           0xc3
+	
+#include <stdlib.h>
+#include <sys/mman.h>
+
+typedef dtrace_probe_t *Devel__DTrace__Probe;
+
+MODULE = Devel::DTrace::Probe		PACKAGE = Devel::DTrace::Probe
+
+PROTOTYPES: ENABLE
+
+VERSIONCHECK: DISABLE  
+
+Devel::DTrace::Probe
+new(package, argc)
+	char *package
+	int argc
+	
+	INIT:
+  	uint8_t *ip;
+  	int i;
+
+	/* First initialise the is_enabled tracepoint */
+	uint8_t insns[FUNC_SIZE] = {
+	  0x55, 0x89, 0xe5, 0x83, 0xec, 0x08,
+	  0x33, 0xc0,
+	  0x90, 0x90, 0x90,
+	  0x89, 0x45, 0xfc, 0x83, 0x7d, 0xfc,
+	  0x00, 0x0f, 0x95, 0xc0, 0x0f, 0xb6,
+	  0xc0, 0x89, 0x45, 0xfc, 0x8b, 0x45,
+	  0xfc, 
+	  0xc9, 0xc3
+	};
+
+	CODE:
+	RETVAL = malloc(sizeof(dtrace_probe_t));
+
+  /* Set up probe function */
+  ip = insns + IS_ENABLED_FUNC_LEN;
+
+  uint8_t func_in[7] = {
+    OP_PUSHL_EBP, OP_MOVL_ESP_EBP, OP_SUBL_N_ESP, 0x08, NULL
+
+  };
+  
+  uint8_t func_out[3] = {
+    OP_LEAVE, OP_RET, NULL
+  };
+  
+  for (i = 0; func_in[i]; i++)
+    *ip++ = func_in[i];
+
+  for (i = (4 + 4*argc); i >= 0x08; i -= 4) {
+    *ip++ = OP_PUSHL_N_EBP_U;
+    *ip++ = OP_PUSHL_N_EBP_L;
+    *ip++ = i;
+  }
+
+  for (i = 0; i <=5; i++)
+    *ip++ = OP_NOP;
+
+  *ip++ = OP_ADDL_ESP_U;
+  *ip++ = OP_ADDL_ESP_L;
+  *ip++ = argc * 4;
+  
+  for (i = 0; func_out[i]; i++)
+    *ip++ = func_out[i];
+
+  /* allocate memory on a page boundary, for mprotect */
+  RETVAL->func = (int (*)())memalign(PAGESIZE, FUNC_SIZE);
+  if (RETVAL->func == NULL)
+    Perl_croak(aTHX_ "Failed to allocate memory for probe: %s", strerror(errno));
+
+  (void)mprotect((void *)RETVAL->func, FUNC_SIZE, PROT_READ | PROT_WRITE | PROT_EXEC);
+  memcpy((void *)RETVAL->func, insns, FUNC_SIZE);
+
+	OUTPUT:
+	RETVAL
+
+void
+DESTROY(self)
+	Devel::DTrace::Probe self
+	CODE:
+	free((void *)self->func);
+    	free(self);
+	
+SV *
+addr(self)
+	Devel::DTrace::Probe self
+	CODE:
+	RETVAL = newSViv((IV)self->func);
+	OUTPUT:
+	RETVAL
+
+SV *
+is_enabled(self)
+	Devel::DTrace::Probe self
+	CODE:
+	RETVAL = newSViv((IV)(int)(*self->func)());
+	OUTPUT:
+	RETVAL
+
+void
+fire(self, ...)
+	Devel::DTrace::Probe self
+	PREINIT:
+	int i;
+	void *argv[8]; // probe argc max for now.
+  	void (*func)();
+	STRLEN n_a;
+	int argc;
+	CODE:
+	argc = items - 1;
+	/* munge Perl values to either char *s or ints. */
+  	for (i = 0; i < argc; i++) {
+	  switch (SvTYPE(ST(i + 1))) { // skip over first argument to XS
+	    case SVt_PV:
+	      argv[i] = (void *)SvPV(ST(i + 1), SvCUR(ST(i + 1)));
+	      break;
+	    case SVt_IV:
+	      argv[i] = (void *)SvIV(ST(i + 1));
+	      break;
+    	  }
+	}
+  
+  func = (void (*)())((int)self->func + IS_ENABLED_FUNC_LEN);
+
+  switch (items) {
+  case 0:
+    (void)(*func)();
+    break;
+  case 1:
+    (void)(*func)(argv[0]);
+    break;
+  case 2:
+    (void)(*func)(argv[0], argv[1]);
+    break;
+  case 3:
+    (void)(*func)(argv[0], argv[1], argv[2]);
+    break;
+  case 4:
+    (void)(*func)(argv[0], argv[1], argv[2], argv[3]);
+    break;
+  case 5:
+    (void)(*func)(argv[0], argv[1], argv[2], argv[3], 
+		  argv[4]);
+    break;
+  case 6:
+    (void)(*func)(argv[0], argv[1], argv[2], argv[3],
+		  argv[4], argv[5]);
+    break;
+  case 7:
+    (void)(*func)(argv[0], argv[1], argv[2], argv[3],
+		  argv[4], argv[5], argv[6]);
+    break;
+  case 8:
+    (void)(*func)(argv[0], argv[1], argv[2], argv[3],
+		  argv[4], argv[5], argv[6], argv[7]);
+    break;
+  }
+  
+SV *
+probe_offset(self, file_addr, argc)
+	Devel::DTrace::Probe self
+	int file_addr
+	int argc
+	CODE:
+	/*
+	 * compute offset into stub: see dtrace_probe.c
+	 *
+	 * 32 bytes - length of is_enabled function
+	 * +
+	 * 6 bytes - function entry
+	 * +
+	 * 3 bytes per argument - arg->stack push
+	 *
+	 */
+	RETVAL = newSViv(32 + 6 + argc * 3);
+	OUTPUT:
+	RETVAL
+
+SV *
+is_enabled_offset(self, file_addr)
+	Devel::DTrace::Probe self
+	int file_addr
+	CODE:
+	RETVAL = newSViv(8);
+	OUTPUT:
+	RETVAL
