@@ -6,18 +6,16 @@ consumer APIs of DTrace.
 
 What works:
 
+  * Declarative provider construction
   * DOF generation and loading
   * Firing probes directly, with arguments
-  * Probes exposed as subs in their own namespace
-
-To do / to test:
-
+  * Probes exported into application code
   * Is-enabled checks
 
-This is enough to be useful, though doesn't minimise the disabled
-probe effect, and provides no way run code to gather probe arguments
-only when the probe is enabled.
-  
+Tests are under development: DTrace requires root (or other elevated
+privileges) so testing live probes is troublesome. Basic tests should
+be working.
+
 INSTALLATION
 
 To install this module type the following:
