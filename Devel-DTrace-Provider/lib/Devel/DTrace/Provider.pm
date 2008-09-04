@@ -3,14 +3,6 @@ package Devel::DTrace::Provider;
 use 5.008;
 use strict;
 use warnings;
-use Sub::Install;
-
-=head1 NAME
-
-Devel::DTrace::Provider - Create DTrace providers from Perl.
-
-=cut
-
 
 BEGIN {
 	our $VERSION = '0.01';
@@ -224,25 +216,91 @@ sub enable {
 	$f->generate;
 	$f->loaddof($self->{_module});
 	
-# 	for my $stub (keys %$self->{_probes}) {
-# 		Sub::Install::install_sub({
-# 					   code => _gen_stub($self->{_probes}->{$stub}),
-# 					   into => "Devel::DTrace::Probe::$self->{_name}",
-# 					   as   => $stub,
-# 					  });
-# 	}
-
 	return $self->{_probes};
 }
 
 sub probe_function { 
 	my ($self, $probe_name) = @_;
-	return _gen_stub($self->{_probes}->{$probe_name});
-}
-
-sub _gen_stub {
-	my ($stub) = @_;
+	my $stub = $self->{_probes}->{$probe_name};
  	return sub (&) { shift->($stub) if $stub->is_enabled };
 }
 
+sub probe_enabled_function { 
+	my ($self, $probe_name) = @_;
+	my $stub = $self->{_probes}->{$probe_name};
+	return sub { $stub->is_enabled };
+}
+
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Devel::DTrace::Provider - Create DTrace providers from Perl.
+
+=head1 SYNOPSIS
+
+  use Devel::DTrace::Provider;
+    
+  my $provider = Devel::DTrace::Provider->new('provider1', 'perl');
+  $provider->probe('probe1', 'string');
+  my $probes = $provider->enable;
+
+  $probes->{probe1}->fire('foo');
+
+=head1 DESCRIPTION
+
+This module lets you create DTrace providers from Perl. 
+
+If you want to create providers to form part of a larger application,
+in a more declarative style, see Devel::DTrace::Provider::Builder --
+this module provides the raw API, and is more suitable for small
+scripts.
+
+When you create a provider and call its enabled method, the following
+happens:
+
+Native functions are created for each probe, containing the DTrace
+tracepoints to be enabled later by the kernel. DOF (DTrace object
+format) is then generated representing the provider and the
+tracepoints generated, and is inserted into the kernel via the DTrace
+helper device. Perl functions are created for each probe, so they can
+be fired from Perl code. 
+
+=head1 METHODS
+
+=head2 new($provider_name, $module_name)
+
+Create a provider. Takes the name of the provider, and the name of the
+module it should appear to be in to DTrace (in native code this would
+be the library, kernel module, executable etc). 
+
+Returns an empty provider object. 
+
+=head2 probe($probe_name, @argument_types...)
+
+Adds a probe to the provider, named $probe_name. Arguments are set up
+with the types specified. Supported types are 'string' (char *) and
+'integer' (int). A maximum of eight arguments is supported. 
+
+=head2 enable()
+
+Actually adds the provider to the running system. Croaks if there was
+an error inserting the provider into the kernel, or if memory could
+not be allocated for the tracepoint functions.
+
+Returns a hash of probe "stubs", Devel::DTrace::Probe objects. 
+
+=cut
+
+
+
+
+
+
+
+
+
