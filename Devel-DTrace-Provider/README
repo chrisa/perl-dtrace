@@ -16,6 +16,9 @@ Tests are under development: DTrace requires root (or other elevated
 privileges) so testing live probes is troublesome. Basic tests should
 be working.
 
+Currently only supporting Mac OS X Leopard - Solaris support under
+development.
+
 INSTALLATION
 
 To install this module type the following:
