@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Devel::DTrace::Provider;
 
-our %providers;
+my %providers;
 
 sub import {
 	my $caller_package = caller(0);
@@ -11,47 +11,88 @@ sub import {
 	my $coderef;
 	my $provider;
 
-	my $provider_sub = sub ($$) {
-		my $provider_name = shift;
-		$provider = Devel::DTrace::Provider->new($provider_name, 'perl');
-		$coderef->();
-		$provider->enable;
-		$providers{$caller_package} ||= [];
-		push @{$providers{$caller_package}}, $provider;
-	};
+	my $subs = {};
 
-	my $as_sub = sub (&) {
-		$coderef = shift;
-	};
+	if (Devel::DTrace::Provider::DTRACE_AVAILABLE()) {
 
-	my $probe_sub = sub ($;@) {
-		my $probe_name = shift;
-		my @args = @_;
-		$provider->probe($probe_name, @args);
-	};
+		$subs->{provider} = sub ($$) {
+			my $provider_name = shift;
+			$provider = Devel::DTrace::Provider->new($provider_name, 'perl');
+			$coderef->();
+			$provider->enable;
+			$providers{$caller_package} ||= [];
+			push @{$providers{$caller_package}}, $provider;
+		};
 		
-	my $import_sub = sub {
-		my $using_package = shift;
-		my $caller_package = caller(0);
+		$subs->{as} = sub (&) {
+			$coderef = shift;
+		};
 		
-		my $providers = $providers{$using_package};
-		die "no provider for $using_package" unless defined $providers;
+		$subs->{probe} = sub ($;@) {
+			my $probe_name = shift;
+			my @args = @_;
+			$provider->probe($probe_name, @args);
+		};
 		
-		for my $provider (@$providers) {
-			for my $probe_name ($provider->probe_names) {
-				no strict 'refs';
-				*{"${caller_package}::${probe_name}"} = $provider->probe_function($probe_name);
-				*{"${caller_package}::${probe_name}_enabled"} = $provider->probe_enabled_function($probe_name);
+		$subs->{import} = sub {
+			my $using_package = shift;
+			my $caller_package = caller(0);
+		
+			my $providers = $providers{$using_package};
+			die "no provider for $using_package" unless defined $providers;
+		
+			for my $provider (@$providers) {
+				for my $probe_name ($provider->probe_names) {
+					no strict 'refs';
+					*{"${caller_package}::${probe_name}"} = $provider->probe_function($probe_name);
+					*{"${caller_package}::${probe_name}_enabled"} = $provider->probe_enabled_function($probe_name);
+				}
 			}
-		}
-	};
+		};
+	}
+	else {
+		my $provider_name;
+
+		# Just note provider and probe names, don't actually do anything. 
+		$subs->{provider} = sub ($$) {
+			$provider_name = shift;
+			$providers{$caller_package} ||= {};
+			$providers{$caller_package}->{$provider_name} = [];
+			$coderef->();
+		};
+		
+		$subs->{as} = sub (&) {
+			$coderef = shift;
+		};
+		
+		$subs->{probe} = sub ($;@) {
+			my $probe_name = shift;
+			push @{$providers{$caller_package}->{$provider_name}}, $probe_name
+		};
+		
+		# Import routine providing no-op probe subs
+		$subs->{import} = sub {
+			my $using_package = shift;
+			my $caller_package = caller(0);
+		
+			my $providers = $providers{$using_package};
+			die "no provider for $using_package" unless defined $providers;
+		
+			for my $provider (keys %$providers) {
+				for my $probe_name (@{$providers->{$provider}}) {
+					no strict 'refs';
+					*{"${caller_package}::${probe_name}"} = sub (&) { 0 };
+					*{"${caller_package}::${probe_name}_enabled"} = sub { 0 };
+				}
+			}
+		};
+	}
 	
 	{
 		no strict 'refs';
-		*{"${caller_package}::provider"} = $provider_sub;
-		*{"${caller_package}::as"}       = $as_sub;
-		*{"${caller_package}::probe"}    = $probe_sub;
-		*{"${caller_package}::import"}   = $import_sub;
+		for my $sub (keys %$subs) {
+			*{"${caller_package}::${sub}"} = $subs->{$sub};
+		}
 	}
 }
 

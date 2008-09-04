@@ -4,10 +4,21 @@ use 5.008;
 use strict;
 use warnings;
 
+
 BEGIN {
 	our $VERSION = '0.01';
 	require XSLoader;
-	XSLoader::load('Devel::DTrace::Provider', $VERSION);
+	eval {
+		XSLoader::load('Devel::DTrace::Provider', $VERSION);
+	};
+
+	my $DTRACE_AVAILABLE = 1;
+	if ($@ && $@ =~ /Can't locate loadable object/) {
+		# No object - assume it wasn't built, and we should noop everything. 
+		$DTRACE_AVAILABLE = 0;
+	}
+
+	sub DTRACE_AVAILABLE { $DTRACE_AVAILABLE };
 }
 
 use Devel::DTrace::DOF;
@@ -15,7 +26,7 @@ use Devel::DTrace::DOF::Constants qw/ :all /;
 use Devel::DTrace::Probe;
 use Devel::DTrace::Provider::ProbeDef;
 
-our $Typemap = { string => 'char *', integer => 'int' };
+my $Typemap = { string => 'char *', integer => 'int' };
 
 sub new {
 	my ($class, $provider_name, $module_name) = @_;

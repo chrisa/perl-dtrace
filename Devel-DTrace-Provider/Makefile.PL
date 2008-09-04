@@ -4,16 +4,22 @@ use ExtUtils::MakeMaker;
 # TODO: catch early versions of these, handle failure by not building
 # the XS part.
 my $platform = $^O;
+my $build_native = 0;
 if ($platform eq 'darwin') {
 	print STDERR "Building for OS X\n";
 	symlink 'DTrace_Probe.xs-darwin', 'DTrace_Probe.xs';
+	if (-f '/usr/include/dtrace.h') {
+		print STDERR "DTrace available, building native components\n";
+		$build_native = 1;
+	}
 }
 elsif ($platform eq 'solaris') {
 	print STDERR "Building for Solaris\n";
 	symlink 'DTrace_Probe.xs-solaris', 'DTrace_Probe.xs';
-}
-else {
-	die "Platforms supported: solaris darwin";
+	if (-f '/usr/include/dtrace.h') {
+		print STDERR "DTrace available, building native components\n";
+		$build_native = 1;
+	}
 }
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
@@ -28,6 +34,8 @@ WriteMakefile(
     LIBS              => [''], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
     INC               => '-I.', # e.g., '-I. -I/usr/include/other'
-	# Un-comment this if you add C files to link with later:
-    OBJECT            => '$(O_FILES)' # link all the C files too
+    ($build_native ? # DTrace available?
+     (OBJECT          => '$(O_FILES)',) : 
+     (NEEDS_LINKING   => 0, SKIP => ['dynamic'])
+    ),
 );
