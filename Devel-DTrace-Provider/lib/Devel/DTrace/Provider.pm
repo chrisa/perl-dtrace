@@ -226,6 +226,7 @@ sub enable {
 
 	$f->generate;
 	$f->loaddof($self->{_module});
+	$self->{_file} = $f; # reference to File keeps provider alive
 	
 	return $self->{_probes};
 }
