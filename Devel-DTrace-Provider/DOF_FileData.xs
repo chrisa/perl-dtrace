@@ -9,6 +9,7 @@ typedef struct dof_file {
   char *dof;
   uint32_t len;
   uint32_t offset;
+  int gen; /* DOF helper generation, see drti.c */
 } dof_file_t;
 
 typedef dof_file_t *Devel__DTrace__DOF__FileData;
@@ -21,7 +22,7 @@ typedef dof_file_t *Devel__DTrace__DOF__FileData;
 #ifdef __APPLE__
 static const char *helper = "/dev/dtracehelper";
 
-int _loaddof(int fd, dof_helper_t *dh)
+static int _loaddof(int fd, dof_helper_t *dh)
 {
   int ret;
   uint8_t buffer[sizeof(dof_ioctl_data_t) + sizeof(dof_helper_t)];
@@ -42,9 +43,14 @@ int _loaddof(int fd, dof_helper_t *dh)
 /* ignore Sol10 GA ... */
 static const char *helper = "/dev/dtrace/helper";
 
-int _loaddof(int fd, dof_helper_t *dh)
+static int _loaddof(int fd, dof_helper_t *dh)
 {
   return ioctl(fd, DTRACEHIOC_ADDDOF, dh);
+}
+
+static int _removedof(int fd, int gen)
+{
+  return ioctl(fd, DTRACEHIOC_REMOVE, gen);
 }
 
 #endif
@@ -71,7 +77,12 @@ new(package)
 void
 DESTROY(file)
 	Devel::DTrace::DOF::FileData file
+        PREINIT:
+	int fd;
 	CODE:
+  	fd = open(helper, O_RDWR);
+        (void)_removedof(fd, file->gen);
+    	(void) close(fd);
 	free(file->dof);
 	free(file);
 
@@ -116,7 +127,6 @@ loaddof(self, module_name)
 	PREINIT:
   	dof_helper_t dh;
   	int fd;
-  	int gen;
   	dof_hdr_t *dof;
 	CODE:
 	dof = (dof_hdr_t *)self->dof;
@@ -131,6 +141,5 @@ loaddof(self, module_name)
   	dh.dofhp_addr = (uintptr_t)dof;
   	(void) snprintf(dh.dofhp_mod, sizeof (dh.dofhp_mod), module_name);
   	fd = open(helper, O_RDWR);
-    	gen = _loaddof(fd, &dh);
+        self->gen = _loaddof(fd, &dh);
     	(void) close(fd);
-
