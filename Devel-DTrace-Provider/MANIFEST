@@ -12,8 +12,6 @@ lib/Devel/DTrace/DOF/Section/Strtab.pm
 lib/Devel/DTrace/DOF/Section.pm
 lib/Devel/DTrace/DOF.pm
 lib/Devel/DTrace/Probe.pm
-lib/Devel/DTrace/Provider/Base.pm
-lib/Devel/DTrace/Provider/Base.pm.works
 lib/Devel/DTrace/Provider/Builder.pm
 lib/Devel/DTrace/Provider/ProbeDef.pm
 lib/Devel/DTrace/Provider.pm
