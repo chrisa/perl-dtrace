@@ -38,6 +38,11 @@ static int _loaddof(int fd, dof_helper_t *dh)
   return ret;
 }
 
+static int _removedof(int fd, int gen)
+{
+  return 0;
+}
+
 #else /* Solaris */
 
 /* ignore Sol10 GA ... */
