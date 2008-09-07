@@ -82,7 +82,7 @@ sub import {
 				for my $probe_name (@{$providers->{$provider}}) {
 					no strict 'refs';
 					*{"${caller_package}::${probe_name}"} = sub (&) { 0 };
-					*{"${caller_package}::${probe_name}_enabled"} = sub { 0 };
+					*{"${caller_package}::${probe_name}_enabled"} = sub () { 0 };
 				}
 			}
 		};
