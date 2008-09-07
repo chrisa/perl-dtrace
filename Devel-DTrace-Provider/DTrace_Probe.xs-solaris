@@ -144,12 +144,13 @@ fire(self, ...)
 	/* munge Perl values to either char *s or ints. */
   	for (i = 0; i < argc; i++) {
 	  switch (SvTYPE(ST(i + 1))) { // skip over first argument to XS
-	    case SVt_PV:
-	      argv[i] = (void *)SvPV(ST(i + 1), SvCUR(ST(i + 1)));
-	      break;
-	    case SVt_IV:
-	      argv[i] = (void *)SvIV(ST(i + 1));
-	      break;
+	  case SVt_PVNV:
+	  case SVt_PV:
+	    argv[i] = (void *)SvPV(ST(i + 1), SvCUR(ST(i + 1)));
+	    break;
+	  case SVt_IV:
+	    argv[i] = (void *)SvIV(ST(i + 1));
+	    break;
     	  }
 	}
   
