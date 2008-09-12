@@ -24,11 +24,10 @@ DOF_Header.xs
 DOF_Section.xs
 DTrace_Probe.xs-darwin
 DTrace_Probe.xs-solaris
+probe_args.c
 typemap
 t/basics.t
-t/dtrace_lib.pl
 t/fire-probe-block.t
-t/fire-probe.t
 t/import-provider.t
 t/probe-args.t
 t/provider.t

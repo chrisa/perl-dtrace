@@ -11,4 +11,3 @@ for my $i (1..5) {
 	$stubs->{test}->fire('foo', $i);
 }
 
-Devel::DTrace::Probe::test0::test('foo', 42);
