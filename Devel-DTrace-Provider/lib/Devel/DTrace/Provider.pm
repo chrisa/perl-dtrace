@@ -251,9 +251,11 @@ __END__
 
 =head1 NAME
 
-Devel::DTrace::Provider - Create DTrace providers from Perl.
+Devel::DTrace::Provider - Create DTrace providers for Perl programs.
 
 =head1 SYNOPSIS
+
+  # Create a provider in OO style:
 
   use Devel::DTrace::Provider;
     
@@ -263,24 +265,109 @@ Devel::DTrace::Provider - Create DTrace providers from Perl.
 
   $probes->{probe1}->fire('foo');
 
+  # or, with the Builder module, declaratively:
+
+  use Devel::DTrace::Provider::Builder;
+
+  provider 'provider1' => as {
+    probe 'probe1', 'string';
+  };
+
+  probe1 { shift->fire('foo') } if probe1_is_enabled;
+
 =head1 DESCRIPTION
 
-This module lets you create DTrace providers from Perl. 
+This module lets you create DTrace providers for your Perl programs,
+from Perl - no further native code is required. 
 
 If you want to create providers to form part of a larger application,
 in a more declarative style, see Devel::DTrace::Provider::Builder --
 this module provides the raw API, and is more suitable for small
 scripts.
 
-When you create a provider and call its enabled method, the following
+When you create a provider and call its C<enable> method, the following
 happens:
 
 Native functions are created for each probe, containing the DTrace
-tracepoints to be enabled later by the kernel. DOF (DTrace object
-format) is then generated representing the provider and the
+tracepoints to be enabled later by the kernel. DOF (DTrace Object
+Dormat) is then generated representing the provider and the
 tracepoints generated, and is inserted into the kernel via the DTrace
 helper device. Perl functions are created for each probe, so they can
-be fired from Perl code. 
+be fired from Perl code.
+
+Your program does not need to run as root to create providers.
+
+Providers created by this module should survive fork(), and become
+visible from both parent and child processes separately.  Redefining a
+provider should be possible within the same process. These two
+features permit providers to be created by mod_perl applications. 
+
+=head2 Using Perl providers
+
+=over4
+
+=item Listing probes available
+
+To list the probes created by your providers, invoke dtrace(1):
+
+  $ sudo /usr/sbin/dtrace -l -n 'myprovider*:::'
+
+where "myprovider" is the name of your provider. To restrict this to a
+specific process by PID, replace the * by the pid:
+
+  $ sudo /usr/sbin/dtrace -l -n 'myprovider1234:::'
+
+=item Observing probe activity
+
+To just see the probes firing, use a command like:
+
+  $ sudo /usr/sbin/dtrace -n 'myprovider*:::'
+
+If your script is not already running when you run dtrace(1), use the
+-Z flag, which indicates that dtrace(1) should wait for the probes to
+be created, rather than exiting with an error:
+
+  $ sudo /usr/sbin/dtrace -Z -n 'myprovider*:::'
+
+=item Collecting probe arguments
+
+To collect arguments from a specific probe, you can use the trace()
+action:
+
+  $ sudo /usr/sbin/dtrace -n 'myprovider*:::myprobe{ trace(arg0); }'
+
+for an integer argument, and:
+
+  $ sudo /usr/sbin/dtrace -n 'myprovider*:::myprobe{ trace(copyinstr(arg0)); }'
+  
+for a string argument. 
+
+There are numerous other actions and predicates - see the DTrace guide
+for full details:
+
+  http://docs.sun.com/app/docs/doc/817-6223
+
+=back
+
+=head1 CAVEATS
+
+=head2 Platform support
+
+This release supports DTrace on both Solaris and Mac OS X Leopard, but
+only on i386, 32 bit. 
+
+Support for Solaris on SPARC, OS X on PowerPC and 64 bit processes
+will follow.
+
+=head2 Testing
+
+The tests in the distribution do not actually verify the probes are
+created or fired, because DTrace requires additional privileges. It's
+also complex to start an external dtrace(1) to perform the testing. 
+
+However, they do verify that it's possible to run the provider
+creation code. I plan to add optional tests which do full testing if
+run with additional privileges.
 
 =head1 METHODS
 
@@ -305,6 +392,17 @@ an error inserting the provider into the kernel, or if memory could
 not be allocated for the tracepoint functions.
 
 Returns a hash of probe "stubs", Devel::DTrace::Probe objects. 
+
+=head1 AUTHOR
+
+Chris Andrews <chris@nodnol.org>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (C) 2008, Chris Andrews <chris@nodnol.org>. All rights reserved. 
+
+This module is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut
 
