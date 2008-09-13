@@ -137,6 +137,10 @@ This module provides a declarative way of creating DTrace providers,
 in packages which export their probes on import. This is typically
 what you want when creating a provider for use in a large application:
 
+Providers created with this module may be used on systems where DTrace
+is not supported: the probes will be optimised away entirely -- see
+"DISABLED PROBE EFFECT", below.
+
 =over 4
 
 =item Declare your provider in its own package

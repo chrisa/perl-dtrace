@@ -302,6 +302,12 @@ visible from both parent and child processes separately.  Redefining a
 provider should be possible within the same process. These two
 features permit providers to be created by mod_perl applications. 
 
+This module may be installed on systems which do not support DTrace:
+in this case, no native code is built, and providers created by the
+Builder module will be stubbed out such that there is zero runtime
+overhead. This can be useful for applications which should run on
+multiple platforms while still having the probe code embedded. 
+
 =head2 Using Perl providers
 
 =over4
