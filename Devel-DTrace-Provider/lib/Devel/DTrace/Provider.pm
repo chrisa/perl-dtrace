@@ -290,7 +290,7 @@ happens:
 
 Native functions are created for each probe, containing the DTrace
 tracepoints to be enabled later by the kernel. DOF (DTrace Object
-Dormat) is then generated representing the provider and the
+Format) is then generated representing the provider and the
 tracepoints generated, and is inserted into the kernel via the DTrace
 helper device. Perl functions are created for each probe, so they can
 be fired from Perl code.
