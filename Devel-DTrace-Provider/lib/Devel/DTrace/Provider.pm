@@ -399,6 +399,13 @@ not be allocated for the tracepoint functions.
 
 Returns a hash of probe "stubs", Devel::DTrace::Probe objects. 
 
+=head1 DEVELOPMENT
+
+The source to Devel::DTrace::Provider is in github:
+
+  http://github.com/chrisa/perl-dtrace/tree/master/Devel-DTrace-Provider
+
+
 =head1 AUTHOR
 
 Chris Andrews <chris@nodnol.org>
