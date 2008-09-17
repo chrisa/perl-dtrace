@@ -94,6 +94,8 @@ sub dof_size {
 		$size += $sec;
 		my $i = $size % 8;
 		if ($i > 0) {
+			# Size estimate simplification - assume
+			# everything is 8-byte aligned
 			$size += int((8 - $i));
 		}
 	}
@@ -161,6 +163,8 @@ sub enable {
 	$s->data([@data]);
 	push @{$f->sections}, $s;
 
+	# This must happen after we know the eventual size of the DOF,
+	# but before we add any probe addresses. 
 	$f->allocate($self->dof_size);
 
 	$s = Devel::DTrace::DOF::Section->new(DOF_SECT_PROFFS, 3);
@@ -310,7 +314,7 @@ multiple platforms while still having the probe code embedded.
 
 =head2 Using Perl providers
 
-=over4
+=over 4
 
 =item Listing probes available
 

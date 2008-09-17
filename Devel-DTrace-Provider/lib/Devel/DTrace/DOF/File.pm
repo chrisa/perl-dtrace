@@ -93,4 +93,84 @@ sub generate {
 
 1;
 				     
-	
+__END__
+
+=pod
+
+=head1 NAME
+
+Devel::DTrace::DOF::File - a set of DOF sections describing a USDT provider.
+
+=head1 SYNOPSIS
+
+  my $file = Devel::DTrace::DOF::File->new();
+  my $section = ... ;
+  push @{$f->sections}, $section;
+  ...
+  $f->allocate($dof_size); 
+  $f->generate;
+  $f->loaddof($module_name);
+ 
+=head1 DESCRIPTION
+
+Represents the set of DOF sections describing a USDT provider, and
+handles loading the generated DOF into the kernel.
+
+The buffer into which the generated DOF is written is part of a File
+object, and since the location of the buffer is important--and affects
+the probe offsets stored in the DOF--there is a restriction on when
+the buffer must be allocated.
+
+On Mac OS X, the location of the probe is given as an offset from the
+location of the DOF. This implies that the location of the DOF is
+known, which is simple when it's compiled into an executable but less
+so when it must be in a buffer on the heap. 
+
+The complication is that the offset is written into the DOF
+itself--meaning that you need to estimate the size of the DOF, and
+allocate a large enough buffer, before you create the probes. If you
+were to reallocate the buffer as required, it would almost certainly
+move, invalidating the probe offsets already computed.
+
+A suitable approach is to perform the following operations:
+
+=over 4
+
+=item Evaluate probes and their arguments, creating the string table.
+
+=item Allocate a large-enough DOF buffer based on the probes and strings.
+
+=item Create offset sections and provider section. 
+
+=back
+
+By starting with the probes, arguments and string table, we can
+estimate the size of the DOF, then allocate the buffer and continue
+computing offsets knowing we don't need to reallocate the buffer.
+
+=head1 METHODS
+
+=head2 new()
+
+Constructor. Returns an empty File object, with no DOF buffer allocated.
+
+=head2 allocate($size)
+
+Allocate a DOF buffer of the given size in bytes. While you can call
+this more than once to extend the DOF buffer, if you have already used
+the location of the buffer to compute offsets, they will become
+invalid. 
+
+=head2 generate()
+
+Run the DOF generation process for all the sections, and compose the
+full DOF. Must be called after allocate() has been used to create a
+sufficently large buffer. Dies if the buffer is unallocated or too
+small.
+
+=head2 loaddof()
+
+Loads the generated DOF into the kernel, via the DTrace helper
+device. This does not require root or dtrace privileges. 
+
+=cut

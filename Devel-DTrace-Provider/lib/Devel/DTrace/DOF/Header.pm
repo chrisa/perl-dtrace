@@ -41,3 +41,64 @@ sub dof_version {
 }
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME 
+
+Devel::DTrace::DOF::Header - a DOF header
+
+=head1 SYNOPSIS
+
+  my $header = Devel::DTrace::DOF::Header->new();
+  $header->secnum(scalar @sections);
+  ...
+  $header->filesz($size);
+  $header->loadsz($load_size);
+  $header->dof_version($ver);
+  my $dof = $header->generate();
+
+=head1 DESCRIPTION
+
+Represents a DOF header. Used like Devel::DTrace::DOF::Section objects.
+
+=head1 METHODS
+
+=head2 new()
+
+Constructor. Takes no arguments.
+
+=head2 secnum($num)
+
+Sets the number of DOF sections associated with this header.
+
+=head2 loadsz($size)
+
+Sets the "loadable" size of the DOF (full size less any sections not
+required by the kernel).
+
+=head2 filesz($size)
+
+Sets the full size of the DOF.
+
+=head2 dof_version($ver)
+
+Sets the version number of this DOF: 
+
+=over 4
+
+=item Version 1: Solaris, without is_enabled probes
+
+=item Version 2: Solaris, with is_enabled probes
+
+=item Version 3: Mac OS X
+
+=back
+
+=head2 generate
+
+Returns the generated DOF section.
+
+=cut

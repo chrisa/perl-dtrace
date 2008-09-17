@@ -14,7 +14,7 @@ sub new {
 	$self->{_index}	       = $index;
 	$self->{_flags}	       = 1; # DOF_SECF_LOAD
 	$self->{_data}	       = {};
-	$self->{_align}	       = $self->align;
+	$self->{_align}	       = $self->_alignment;
 	$self->{_offset}       = 0;
 	$self->{_size}	       = 0;
 
@@ -29,6 +29,11 @@ sub section_type {
 sub dof {
 	my ($self) = @_;
 	return $self->{_dof};
+}
+
+sub align {
+	my ($self) = @_;
+	return $self->{_align};
 }
 
 sub entsize {
@@ -97,12 +102,12 @@ sub generate {
 		return;
 	}
 
-	$self->{_entsize} = $self->compute_entsize;
+	$self->{_entsize} = $self->_compute_entsize;
 
 	return length $self->{_dof};
 }
 
-sub compute_entsize {
+sub _compute_entsize {
 	my ($self) = @_;
 
 	my $entsize;
@@ -121,7 +126,7 @@ sub compute_entsize {
 	return $entsize;
 }
 
-sub align {
+sub _alignment {
 	my ($self) = @_;
 
 	my $alignments = {
@@ -140,5 +145,55 @@ sub align {
 
 	return $alignments->{$self->{_section_type}};
 }
-			
+
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Devel::DTrace::DOF::Section - a DOF section
+
+=head1 SYNOPSIS
+
+  my $index = 0;
+  my $type = DOF_SECT_PROBES;
+  my $sec = Devel::DTrace::DOF::Section->new($type, $index)
+  my $probes = ... ;
+  $sec->data($probes);
+  my $length = $sec->generate();
+  my $dof = $sec->dof();
+
+=head1 DESCRIPTION
+
+=head1 METHODS
+
+=head2 new($type, $index)
+
+Constructor. Takes C<$type>, which is one of the DOF_SECT_* constant,
+and C<$index>, the index of this section in the DOF. Returns an empty
+Devel::DTrace::DOF::Section object.
+
+=head2 section_type
+
+Returns the section type as the value of the appropriate DOF_SECT_*
+constant.
+
+=head2 dof
+
+Returns the generated DOF. Only valid after generate() has been
+called.
+
+=head2 data
+
+Set or get the DOF data structure. This is the data used to populate
+the DOF, and its structure is dependent on the section type. 
+
+=head2 generate
+
+Run the DOF generation routine, returning the length of the data
+generated.
+
+=cut
