@@ -127,7 +127,7 @@ sub enable {
 			$argv = $i if $argv == 0;
 		}
 		
-		my $probe = Devel::DTrace::Probe->new($argc);
+		my $probe = Devel::DTrace::Probe->new($pd->args);
 		push @$probes, 
 		{
 		 name     => $self->{_strtab}->add($pd->name),

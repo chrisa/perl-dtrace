@@ -4,16 +4,7 @@
 
 #include "ppport.h"
 
-/* Struct wrapping a probe, a handcrafted function created to be a
-   probe trigger point, and its corresponding is_enabled tracepoint.
-
-   This is actually a pointer to the is_enabled function (the probe
-   function is after) so it's declared to take no args, and return
-   int. */
-typedef struct dtrace_probe {
-  int (*func)();
-} dtrace_probe_t;
-
+#include "DTrace_Probe.h"
 
 #define FUNC_SIZE 96 /* 32 bytes of is_enabled, plus then good for 16
 			 arguments: 16 + 3 * argc */
@@ -30,11 +21,6 @@ typedef struct dtrace_probe {
 #define OP_LEAVE         0xc9
 #define OP_RET           0xc3
 	
-#include <stdlib.h>
-#include <sys/mman.h>
-
-typedef dtrace_probe_t *Devel__DTrace__Probe;
-
 MODULE = Devel::DTrace::Probe		PACKAGE = Devel::DTrace::Probe
 
 PROTOTYPES: ENABLE
@@ -42,9 +28,9 @@ PROTOTYPES: ENABLE
 VERSIONCHECK: DISABLE  
 
 Devel::DTrace::Probe
-new(package, argc)
+new(package, types)
 	char *package
-	int argc
+        char **types;
 	
 	INIT:
   	uint8_t *ip;
@@ -64,6 +50,7 @@ new(package, argc)
 
 	CODE:
 	RETVAL = malloc(sizeof(dtrace_probe_t));
+        init_types(types, RETVAL);
 
   /* Set up probe function */
   ip = insns + IS_ENABLED_FUNC_LEN;
@@ -80,7 +67,7 @@ new(package, argc)
   for (i = 0; func_in[i]; i++)
     *ip++ = func_in[i];
 
-  for (i = (4 + 4*argc); i >= 0x08; i -= 4) {
+  for (i = (4 + 4*RETVAL->argc); i >= 0x08; i -= 4) {
     *ip++ = OP_PUSHL_N_EBP_U;
     *ip++ = OP_PUSHL_N_EBP_L;
     *ip++ = i;
@@ -91,7 +78,7 @@ new(package, argc)
 
   *ip++ = OP_ADDL_ESP_U;
   *ip++ = OP_ADDL_ESP_L;
-  *ip++ = argc * 4;
+  *ip++ = RETVAL->argc * 4;
   
   for (i = 0; func_out[i]; i++)
     *ip++ = func_out[i];
@@ -140,46 +127,30 @@ fire(self, ...)
 	STRLEN n_a;
 	int argc;
 	CODE:
+
 	argc = items - 1;
 	/* munge Perl values to either char *s or ints. */
-  	for (i = 0; i < argc; i++)
-	  argv[i] = (void *)argval(ST(i + 1)); // skip over first argument to XS
+	if (argc != self->argc)
+	  Perl_croak(aTHX_ "Probe takes %d arguments, %d provided", self->argc, argc);
+  	for (i = 0; i < self->argc; i++) {
+	  switch (self->types[i]) {
+	  case 0:
+	    if (SvPOK(ST(i + 1)))
+	      argv[i] = (void *)(SvPV_nolen(ST(i + 1)));
+	    else
+	      Perl_croak(aTHX_ "Argument type mismatch: %d should be string", i);
+	    break;
+	  case 1:
+	    if (SvIOK(ST(i + 1)))
+	      argv[i] = (void *)(SvIV(ST(i + 1)));
+	    else
+	      Perl_croak(aTHX_ "Argument type mismatch: %d should be integer", i);
+	    break;
+	  }
+	}
   
 	func = (void (*)())((int)self->func + IS_ENABLED_FUNC_LEN);
-
-  switch (items) {
-  case 0:
-    (void)(*func)();
-    break;
-  case 1:
-    (void)(*func)(argv[0]);
-    break;
-  case 2:
-    (void)(*func)(argv[0], argv[1]);
-    break;
-  case 3:
-    (void)(*func)(argv[0], argv[1], argv[2]);
-    break;
-  case 4:
-    (void)(*func)(argv[0], argv[1], argv[2], argv[3]);
-    break;
-  case 5:
-    (void)(*func)(argv[0], argv[1], argv[2], argv[3], 
-		  argv[4]);
-    break;
-  case 6:
-    (void)(*func)(argv[0], argv[1], argv[2], argv[3],
-		  argv[4], argv[5]);
-    break;
-  case 7:
-    (void)(*func)(argv[0], argv[1], argv[2], argv[3],
-		  argv[4], argv[5], argv[6]);
-    break;
-  case 8:
-    (void)(*func)(argv[0], argv[1], argv[2], argv[3],
-		  argv[4], argv[5], argv[6], argv[7]);
-    break;
-  }
+        call_func(func, argc, argv);
   
 SV *
 probe_offset(self, file_addr, argc)

@@ -32,7 +32,7 @@ WriteMakefile(
       (ABSTRACT_FROM  => 'lib/Devel/DTrace/Provider.pm', # retrieve abstract from module
        AUTHOR         => 'Chris Andrews <chris@nodnol.org>') : ()),
     LIBS              => [''], # e.g., '-lm'
-    DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
+    DEFINE            => '-g', # e.g., '-DHAVE_SOMETHING'
     INC               => '-I.', # e.g., '-I. -I/usr/include/other'
     ($build_native ? # DTrace available?
      (OBJECT          => '$(O_FILES)',) : 
