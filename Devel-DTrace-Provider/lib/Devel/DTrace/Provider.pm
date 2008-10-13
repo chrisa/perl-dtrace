@@ -6,7 +6,7 @@ use warnings;
 
 
 BEGIN {
-	our $VERSION = '0.01';
+	our $VERSION = '0.02';
 	require XSLoader;
 	eval {
 		XSLoader::load('Devel::DTrace::Provider', $VERSION);

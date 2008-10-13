@@ -1,4 +1,8 @@
 Revision history for Perl extension Devel::DTrace::Provider.
 
+0.02  Mon Oct 13 10:49:30 2008
+        Formalise argument types, and check at fire time. Improves
+	conversion of probe arguments to C strings and ints. 
+
 0.01  Fri Sep 12 17:16:04 2008
 	Initial version, supporting Intel Solaris and OSX only.

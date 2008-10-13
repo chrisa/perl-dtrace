@@ -134,13 +134,13 @@ fire(self, ...)
 	  Perl_croak(aTHX_ "Probe takes %d arguments, %d provided", self->argc, argc);
   	for (i = 0; i < self->argc; i++) {
 	  switch (self->types[i]) {
-	  case 0:
+	  case ARGTYPE_STRING:
 	    if (SvPOK(ST(i + 1)))
 	      argv[i] = (void *)(SvPV_nolen(ST(i + 1)));
 	    else
 	      Perl_croak(aTHX_ "Argument type mismatch: %d should be string", i);
 	    break;
-	  case 1:
+	  case ARGTYPE_INTEGER:
 	    if (SvIOK(ST(i + 1)))
 	      argv[i] = (void *)(SvIV(ST(i + 1)));
 	    else

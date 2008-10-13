@@ -24,6 +24,7 @@ DOF_Header.xs
 DOF_Section.xs
 DTrace_Probe.xs-darwin
 DTrace_Probe.xs-solaris
+DTrace_Probe.h
 probe_args.c
 typemap
 t/basics.t
