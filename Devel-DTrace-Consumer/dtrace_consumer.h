@@ -1,5 +1,9 @@
 #include <dtrace.h>
 
-typedef struct dtrace_context {
+typedef struct dtc_context {
   dtrace_hdl_t *hdl;
-} dtrace_context_t;
+} dtc_context_t;
+
+typedef struct dtc_probedesc {
+  const dtrace_probedesc_t *probe;
+} dtc_probedesc_t;

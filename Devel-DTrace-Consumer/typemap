@@ -1,1 +1,2 @@
-Devel::DTrace::Context    T_PTROBJ
+Devel::DTrace::Context      T_PTROBJ
+Devel::DTrace::ProbeDesc    T_PTROBJ
