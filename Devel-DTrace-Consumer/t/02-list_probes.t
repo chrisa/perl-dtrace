@@ -20,9 +20,16 @@ ok($c);
 # }
 
 $c->probes(sub {
-		   ok($_);
-		   ok($_->provider);
-		   ok($_->module);
-		   ok($_->function);
-		   ok($_->name);
+		   my $probe = shift;
+		   ok($probe);
+		   ok($probe->provider);
+		   ok($probe->module);
+		   ok($probe->function);
+		   ok($probe->name);
+
+# 		   printf ("%s:%s:%s:%s\n",
+# 			   $probe->provider,
+# 			   $probe->module,
+# 			   $probe->function,
+# 			   $probe->name);
 	   });

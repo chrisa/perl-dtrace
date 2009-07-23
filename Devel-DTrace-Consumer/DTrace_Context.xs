@@ -11,7 +11,12 @@ typedef dtc_context_t *Devel__DTrace__Context;
 int _probe_iter(dtrace_hdl_t *hdl, const dtrace_probedesc_t *pdp, void *arg)
 {
   SV *callback = (SV *)arg;
-  dtc_probedesc_t probe;
+
+  dtc_probedesc_t pd;
+  SV *probe = sv_newmortal();
+
+  pd.probe = pdp;
+  sv_setref_pv(probe, "Devel::DTrace::ProbeDesc", &pd);
 
   dSP;
   
@@ -19,7 +24,7 @@ int _probe_iter(dtrace_hdl_t *hdl, const dtrace_probedesc_t *pdp, void *arg)
   SAVETMPS;
   
   PUSHMARK(SP);
-  XPUSHs(sv_2mortal(newSVpv(&probe, 0)));
+  XPUSHs(probe);
   PUTBACK;
   
   call_sv(callback, G_DISCARD);
